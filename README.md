@@ -14,4 +14,4 @@
 
 (How much) • Dunno :3
 
-Criação de site em andamento: https://joaovt323.github.io
+Criação de site em andamento: https://joaovt323.github.io/Tone-ID/
