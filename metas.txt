@@ -1,0 +1,11 @@
+meta - Ajudar músicos
+
+fronteira - detecção de áudio, gestão/análise e edição de áudio
+
+subsistema - detecção de pitch/db
+subsistema - teste de extensão vocal
+subsistema - envio de arquivos .mp3, .wav e etc...
+subsistema - análise e separação de backvocals/instrumentos
+
+entrada - som de vozes, instrumentos, arquivos de áudio
+saída - notas midi
