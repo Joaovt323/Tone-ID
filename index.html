@@ -1,97 +1,336 @@
 <!doctype html>
-<html>
-	<head>
-		<title>Pitch Detector</title>
-		<link href='http://fonts.googleapis.com/css?family=Alike' rel='stylesheet' type='text/css'>
-		<link href="https://cdn.jsdelivr.net/npm/booststrap@5.3.2/dist/css/booststrap.min.css" rel="stylesheet">
-		<script scr="https://jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<html lang="pt-BR">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Tone ID</title>
+	<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+	<style>
+		*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-		<style>
-			body { font: 14pt 'Alike', sans-serif;}
-			#note { font-size: 164px; }
-			.droptarget { background-color: #348781}
-			div.confident { color: black; }
-			div.vague { color: lightgrey; }
-			#note { display: inline-block; height:180px; text-align: left;}
-			
-			#detector { width: 300px; height: 300px; border: 4px solid gray; border-radius: 8px; text-align: center; padding-top: 10px;}
-			#output { width: 300px; height: 42px; }
-			#flat { display: none; }
-			#sharp { display: none; }
-			.flat #flat { display: inline; }
-			.sharp #sharp { display: inline; }
-		</style>
-	</head>
-	<body>
+		:root {
+			--bg:        #0d1117;
+			--surface:   #161b22;
+			--surface2:  #1c2330;
+			--border:    rgba(255,255,255,0.08);
+			--border2:   rgba(255,255,255,0.14);
+			--text:      #e6edf3;
+			--muted:     #7d8590;
+			--teal:      #3ecfaa;
+			--blue:      #5b9cf6;
+			--amber:     #e09940;
+			--coral:     #e8614a;
+			--radius:    10px;
+			--radius-lg: 16px;
+		}
+
+		body {
+			background: var(--bg);
+			color: var(--text);
+			font-family: 'DM Sans', sans-serif;
+			font-size: 14px;
+			min-height: 100vh;
+			padding: 2rem 1.5rem;
+		}
+
+		/* ── header ── */
+		header {
+			display: flex;
+			align-items: baseline;
+			gap: 12px;
+			margin-bottom: 2rem;
+		}
+		header h1 {
+			font-family: 'DM Mono', monospace;
+			font-size: 1.6rem;
+			font-weight: 500;
+			letter-spacing: -0.03em;
+			color: var(--text);
+		}
+		header span {
+			font-size: 11px;
+			color: var(--muted);
+			letter-spacing: 0.08em;
+			text-transform: uppercase;
+		}
+
+		/* ── layout ── */
+		.page { max-width: 860px; margin: 0 auto; }
+
+		.row { display: grid; gap: 12px; margin-bottom: 12px; }
+		.row-2 { grid-template-columns: 1fr 1fr; }
+		.row-3 { grid-template-columns: 1fr 1fr 1fr; }
+		@media (max-width: 600px) {
+			.row-2, .row-3 { grid-template-columns: 1fr; }
+		}
+
+		/* ── card ── */
+		.card {
+			background: var(--surface);
+			border: 1px solid var(--border);
+			border-radius: var(--radius-lg);
+			padding: 1.1rem 1.25rem;
+		}
+		.card-label {
+			font-size: 11px;
+			color: var(--muted);
+			letter-spacing: 0.06em;
+			text-transform: uppercase;
+			margin-bottom: 6px;
+		}
+		.card-value {
+			font-family: 'DM Mono', monospace;
+			font-size: 2.4rem;
+			font-weight: 500;
+			color: var(--text);
+			line-height: 1;
+		}
+		.card-value.mono-sm {
+			font-size: 1.5rem;
+		}
+		.card-sub {
+			font-size: 12px;
+			color: var(--muted);
+			margin-top: 6px;
+		}
+		.card-sub.flat  { color: var(--blue); }
+		.card-sub.sharp { color: var(--coral); }
+
+		/* ── detector card especial ── */
+		#detector {
+			border-radius: var(--radius-lg);
+			border: 1px solid var(--border);
+			transition: border-color 0.2s;
+			background: var(--surface);
+			padding: 1.1rem 1.25rem;
+		}
+		#detector.confident { border-color: var(--teal); }
+		#detector.droptarget { border-color: var(--blue); border-style: dashed; }
+		div.confident { color: var(--text); }
+		div.vague      { color: var(--muted); }
+
+		#note { font-family: 'DM Mono', monospace; font-size: 2.6rem; font-weight: 500; line-height: 1; display: inline-block; }
+		#pitch { font-family: 'DM Mono', monospace; }
+
+		#flat  { display: none; }
+		#sharp { display: none; }
+		.flat  #flat  { display: inline; }
+		.sharp #sharp { display: inline; }
+
+		/* ── db bar ── */
+		.db-bar-wrap {
+			height: 5px;
+			border-radius: 3px;
+			background: var(--surface2);
+			overflow: hidden;
+			margin-top: 10px;
+		}
+		#db_bar {
+			height: 100%;
+			width: 0%;
+			border-radius: 3px;
+			background: var(--teal);
+			transition: width 0.05s, background 0.3s;
+		}
+
+		/* ── canvas output (tuner bar) ── */
+		#output { width: 100%; height: 36px; display: block; margin-top: 8px; }
+
+		/* ── gráficos ── */
+		.chart-wrap {
+			position: relative;
+			width: 100%;
+			height: 160px;
+		}
+
+		/* ── controles ── */
+		.controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+		button {
+			cursor: pointer;
+			background: var(--surface2);
+			border: 1px solid var(--border2);
+			border-radius: var(--radius);
+			color: var(--text);
+			font-family: 'DM Sans', sans-serif;
+			font-size: 13px;
+			padding: 7px 14px;
+			transition: background 0.15s, border-color 0.15s;
+		}
+		button:hover { background: #252d3a; border-color: rgba(255,255,255,0.22); }
+		button.primary {
+			background: var(--teal);
+			border-color: var(--teal);
+			color: #0d1117;
+			font-weight: 500;
+		}
+		button.primary:hover { background: #30b896; }
+
+		/* ── seletor de nota alvo ── */
+		.target-card select {
+			background: var(--surface2);
+			border: 1px solid var(--border2);
+			border-radius: var(--radius);
+			color: var(--text);
+			font-family: 'DM Mono', monospace;
+			font-size: 13px;
+			padding: 5px 8px;
+			margin-right: 6px;
+			margin-top: 6px;
+		}
+		.target-hz {
+			font-family: 'DM Mono', monospace;
+			font-size: 1.4rem;
+			font-weight: 500;
+			color: var(--blue);
+			margin-top: 10px;
+		}
+
+		/* ── last note ── */
+		#last-note-display {
+			font-size: 12px;
+			color: var(--muted);
+			margin-top: 8px;
+		}
+		#lastNote {
+			font-family: 'DM Mono', monospace;
+			color: var(--teal);
+		}
+
+		/* ── section title ── */
+		.section-title {
+			font-size: 11px;
+			color: var(--muted);
+			letter-spacing: 0.06em;
+			text-transform: uppercase;
+			margin-bottom: 4px;
+		}
+	</style>
+</head>
+<body>
+<div class="page">
+
+	<header>
 		<h1>Tone ID</h1>
-		<script src="js/pitchdetect.js"></script>
-		
-		<p><button onclick="startPitchDetect();">Start</button></p>
-		<p>
-			<button onclick="this.innerText = togglePlayback()">use demo audio</button>
-			<button onclick="toggleLiveInput()">use live input</button>
-			<button onclick="toggleOscillator()">use oscillator</button>
-			<!--<button onclick="updatePitch(0);">sample</button>-->
-		</p>
+		<span>detector de pitch &amp; volume</span>
+	</header>
 
+	<script src="js/pitchdetect.js"></script>
+
+	<!-- controles -->
+	<div class="controls">
+		<button class="primary" onclick="startPitchDetect()">Iniciar microfone</button>
+		<button onclick="this.innerText = togglePlayback()">usar demo</button>
+		<button onclick="toggleLiveInput()">entrada ao vivo</button>
+		<button onclick="toggleOscillator()">oscilador</button>
+	</div>
+
+	<!-- linha 1: nota + hz + volume -->
+	<div class="row row-3">
+
+		<!-- detector principal (nota + detune) -->
 		<div id="detector" class="vague">
-			<div class="pitch"><span id="pitch">--</span>Hz</div>
-			<div class="note"><span id="note">--</span></div>   
-			<canvas id="output" width=300 height=42></canvas>
-			<div id="detune"><span id="detune_amt">--</span><span id="flat">cents &#9837;</span><span id="sharp">cents &#9839;</span></div>
+			<div class="card-label">Nota detectada</div>
+			<div><span id="note">--</span></div>
+			<div class="card-sub" id="detune">
+				<span id="detune_amt">--</span>
+				<span id="flat">cents &#9837;</span>
+				<span id="sharp">cents &#9839;</span>
+			</div>
+			<canvas id="output" width="300" height="36"
+				role="img" aria-label="Barra de afinação"></canvas>
+			<div id="last-note-display">Última nota: <span id="lastNote">--</span></div>
 		</div>
 
-		<div id="last-note-display" style="text-align: start; margin: 10px 0; font-family: 'Alike', sans-serif; color: #348781;">
-			Última nota: <span id="lastNote">--</span>
-        </div>
+		<!-- frequência -->
+		<div class="card">
+			<div class="card-label">Frequência</div>
+			<div class="card-value mono-sm">
+				<span id="pitch">--</span><span style="font-size:1rem; color:var(--muted)"> Hz</span>
+			</div>
+		</div>
 
-		<div id="target-selector" style="width: 300px; border: 4px solid gray; border-radius: 8px; text-align: center; margin-top: 10px; padding: 10px;">
-    <div style="font-size: 1.2em; margin-bottom: 5px;">Nota Alvo</div>
-    <select id="selectNote" onchange="updateTargetHz()">
-        <option value="0">C (Dó)</option>
-        <option value="1">C#</option>
-        <option value="2">D (Ré)</option>
-        <option value="3">D#</option>
-        <option value="4">E (Mi)</option>
-        <option value="5">F (Fá)</option>
-        <option value="6">F#</option>
-        <option value="7">G (Sol)</option>
-        <option value="8">G#</option>
-        <option value="9">A (Lá)</option>
-        <option value="10">A#</option>
-        <option value="11">B (Si)</option>
-    </select>
-    <select id="selectOctave" onchange="updateTargetHz()">
-        <option value="0">0</option>
-        <option value="1">1</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4" selected>4</option>
-        <option value="5">5</option>
-        <option value="6">6</option>
-        <option value="7">7</option>
-        <option value="8">8</option>
-    </select>
-    <div style="margin-top: 10px; font-weight: bold;">
-        Frequência: <span id="targetHz">261.63</span> Hz
-    </div>
+		<!-- volume dB -->
+		<div class="card">
+			<div class="card-label">Volume</div>
+			<div class="card-value mono-sm">
+				<span id="db_value" style="color:var(--teal)">-- dB</span>
+			</div>
+			<div class="db-bar-wrap">
+				<div id="db_bar"></div>
+			</div>
+			<div class="card-sub" style="margin-top:8px;">dBFS · –80 → 0</div>
+		</div>
+
+	</div>
+
+	<!-- linha 2: gráficos -->
+	<div class="row row-2">
+
+		<div class="card">
+			<div class="section-title">Frequência (Hz) — tempo real</div>
+			<div class="chart-wrap">
+				<canvas id="pitchChartCanvas"
+					role="img"
+					aria-label="Gráfico de linha com frequência detectada em tempo real">
+					Frequência em Hz ao longo do tempo.
+				</canvas>
+			</div>
+		</div>
+
+		<div class="card">
+			<div class="section-title">Volume (dBFS) — tempo real</div>
+			<div class="chart-wrap">
+				<canvas id="dbChartCanvas"
+					role="img"
+					aria-label="Gráfico de linha com volume em dBFS em tempo real">
+					Volume em dBFS ao longo do tempo.
+				</canvas>
+			</div>
+		</div>
+
+	</div>
+
+	<!-- linha 3: nota alvo -->
+	<div class="row">
+		<div class="card target-card">
+			<div class="card-label">Nota alvo</div>
+			<div>
+				<select id="selectNote" onchange="updateTargetHz()">
+					<option value="0">C (Dó)</option>
+					<option value="1">C#</option>
+					<option value="2">D (Ré)</option>
+					<option value="3">D#</option>
+					<option value="4">E (Mi)</option>
+					<option value="5">F (Fá)</option>
+					<option value="6">F#</option>
+					<option value="7">G (Sol)</option>
+					<option value="8">G#</option>
+					<option value="9">A (Lá)</option>
+					<option value="10">A#</option>
+					<option value="11">B (Si)</option>
+				</select>
+				<select id="selectOctave" onchange="updateTargetHz()">
+					<option value="0">0</option>
+					<option value="1">1</option>
+					<option value="2">2</option>
+					<option value="3">3</option>
+					<option value="4" selected>4</option>
+					<option value="5">5</option>
+					<option value="6">6</option>
+					<option value="7">7</option>
+					<option value="8">8</option>
+				</select>
+			</div>
+			<div class="target-hz">
+				<span id="targetHz">261.63</span> Hz
+			</div>
+		</div>
+	</div>
+
+	<!-- debug canvas (oculto por padrão) -->
+	<!-- <canvas id="waveform" width="512" height="256"></canvas> -->
+
 </div>
-
-		<!-- just used for debugging
-		<canvas id="waveform" width="512" height="256"></canvas>
-		-->
-
-		<script type="text/javascript">
-
-			var _gaq = _gaq || [];
-			_gaq.push(['_setAccount', 'UA-35593052-1']);
-			_gaq.push(['_trackPageview']);
-
-			(function() {
-				var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-				ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-				var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-			})();
-		</script>
-	</body>
+</body>
 </html>
