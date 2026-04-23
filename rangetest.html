@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Range Test — Tone ID</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0d1117; --surface: #161b22; --surface2: #1c2330;
+      --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.16);
+      --text: #e6edf3; --muted: #7d8590;
+      --teal: #3ecfaa; --blue: #5b9cf6; --coral: #e8614a;
+      --wine: #8b2252; --wine-lt: #c9385a;
+      --radius: 10px; --radius-lg: 16px;
+    }
+    body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; font-size:14px; min-height:100vh; padding:2rem 1.5rem; }
+    .page { max-width:860px; margin:0 auto; }
+
+    nav { display:flex; align-items:center; margin-bottom:2.5rem; border-bottom:1px solid var(--border); }
+    nav a { text-decoration:none; color:var(--muted); font-size:13px; padding:8px 18px; border-bottom:2px solid transparent; margin-bottom:-1px; transition:color 0.15s,border-color 0.15s; }
+    nav a:hover { color:var(--text); }
+    nav a.active { color:var(--teal); border-bottom-color:var(--teal); }
+    nav .brand { font-family:'DM Mono',monospace; font-size:1rem; font-weight:500; color:var(--text); padding:8px 18px 8px 0; margin-right:12px; border-right:1px solid var(--border2); border-bottom:2px solid transparent; margin-bottom:-1px; }
+
+    .steps { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); margin-bottom:2rem; }
+    .steps .step { display:flex; align-items:center; gap:6px; }
+    .steps .step-num { width:20px; height:20px; border-radius:50%; background:var(--surface2); border:1px solid var(--border2); display:flex; align-items:center; justify-content:center; font-size:11px; font-family:'DM Mono',monospace; }
+    .steps .step.active .step-num { background:var(--teal); border-color:var(--teal); color:#0d1117; font-weight:500; }
+    .steps .step.done .step-num   { border-color:var(--teal); color:var(--teal); }
+    .steps .step.active span { color:var(--text); }
+    .steps .sep { color:var(--border2); }
+
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:1.25rem 1.4rem; margin-bottom:12px; }
+    .card-title { font-size:15px; font-weight:500; margin-bottom:6px; }
+    .card-desc  { font-size:13px; color:var(--muted); line-height:1.6; margin-bottom:14px; }
+
+    button { cursor:pointer; background:var(--surface2); border:1px solid var(--border2); border-radius:var(--radius); color:var(--text); font-family:'DM Sans',sans-serif; font-size:13px; padding:8px 18px; transition:background 0.15s,opacity 0.15s; }
+    button:hover:not(:disabled) { background:#252d3a; }
+    button:disabled { opacity:0.4; cursor:not-allowed; }
+    button.primary { background:var(--teal); border-color:var(--teal); color:#0d1117; font-weight:500; }
+    button.primary:hover:not(:disabled) { background:#30b896; }
+    button.wine-btn { background:var(--wine); border-color:var(--wine); color:#fff; font-weight:500; padding:10px 28px; font-size:14px; }
+    button.wine-btn:hover:not(:disabled) { background:var(--wine-lt); }
+
+    .status-row { display:flex; align-items:center; gap:16px; margin-top:14px; }
+    .recorded-note { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--muted); }
+    .recorded-note .check { color:var(--teal); font-size:16px; }
+    .recorded-note .note-name { font-family:'DM Mono',monospace; font-size:1.1rem; color:var(--text); }
+
+    .timer-ring-wrap { display:flex; align-items:center; gap:14px; margin-bottom:14px; }
+    .timer-ring { position:relative; width:52px; height:52px; flex-shrink:0; }
+    .timer-ring svg { transform:rotate(-90deg); }
+    .timer-ring .timer-text { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'DM Mono',monospace; font-size:15px; font-weight:500; }
+    .timer-label { font-size:13px; color:var(--muted); line-height:1.6; }
+    .timer-label strong { color:var(--text); font-weight:500; }
+
+    .chart-wrap { position:relative; width:100%; height:140px; }
+    .chart-section-label { font-size:11px; color:var(--muted); letter-spacing:0.06em; text-transform:uppercase; margin-bottom:6px; margin-top:10px; }
+
+    #result-screen { display:none; animation:fadeIn 0.4s ease; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+
+    .result-hero { background:linear-gradient(135deg,#5a0e2e 0%,#3a0820 100%); border:1px solid rgba(200,56,90,0.3); border-radius:var(--radius-lg); padding:2.5rem 2rem; text-align:center; margin-bottom:12px; }
+    .result-headline { font-size:13px; color:rgba(255,255,255,0.5); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:12px; }
+    .result-type { font-family:'DM Mono',monospace; font-size:3rem; font-weight:500; color:#fff; line-height:1; margin-bottom:8px; }
+    .result-range-label { font-family:'DM Mono',monospace; font-size:1.1rem; color:rgba(255,180,180,0.8); margin-bottom:1.5rem; }
+    .result-stats { display:flex; justify-content:center; gap:2.5rem; flex-wrap:wrap; }
+    .result-stat { text-align:center; }
+    .result-stat-val { font-family:'DM Mono',monospace; font-size:1.5rem; font-weight:500; color:#fff; }
+    .result-stat-lbl { font-size:11px; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:0.07em; margin-top:2px; }
+    .result-desc-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:1.25rem 1.4rem; margin-bottom:12px; }
+    .result-desc-title { font-size:13px; font-weight:500; color:var(--muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.06em; }
+    .result-desc-text { font-size:14px; color:var(--text); line-height:1.7; }
+    .result-actions { display:flex; gap:10px; justify-content:center; margin-top:1.5rem; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <nav>
+    <span class="brand">Tone ID</span>
+    <a href="index.html">detector</a>
+    <a href="rangetest.html" class="active">range test</a>
+  </nav>
+
+  <!-- TELA DE TESTE -->
+  <div id="test-screen">
+
+    <div class="steps">
+      <div class="step active" id="step1-crumb"><div class="step-num">1</div><span>nota mais alta</span></div>
+      <div class="sep">›</div>
+      <div class="step" id="step2-crumb"><div class="step-num">2</div><span>nota mais baixa</span></div>
+      <div class="sep">›</div>
+      <div class="step" id="step3-crumb"><div class="step-num">3</div><span>resultado</span></div>
+    </div>
+
+    <!-- passo 1 -->
+    <div id="step1" class="card">
+      <div class="card-title">1. Cante sua nota mais alta</div>
+      <div class="card-desc">Pressione gravar e cante a nota mais alta que conseguir confortavelmente durante 5 segundos. O sistema vai registrar o pico mais agudo detectado.</div>
+
+      <div class="timer-ring-wrap" id="timer1-wrap" style="display:none;">
+        <div class="timer-ring">
+          <svg width="52" height="52" viewBox="0 0 52 52">
+            <circle cx="26" cy="26" r="22" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="4"/>
+            <circle id="ring1" cx="26" cy="26" r="22" fill="none" stroke="#3ecfaa" stroke-width="4"
+              stroke-dasharray="138.2" stroke-dashoffset="0" stroke-linecap="round"
+              style="transition:stroke-dashoffset 0.25s linear;"/>
+          </svg>
+          <div class="timer-text" id="timer1-text">5</div>
+        </div>
+        <div class="timer-label">
+          Nota atual: <strong id="live1-note">--</strong> &nbsp;|&nbsp;
+          Pico: <strong id="peak1-note" style="color:var(--teal);">--</strong>
+        </div>
+      </div>
+
+      <div class="chart-section-label">Frequência detectada — acima de C4</div>
+      <div class="chart-wrap">
+        <canvas id="chartHigh" role="img" aria-label="Gráfico de frequência para nota mais alta">Frequências acima de C4.</canvas>
+      </div>
+      <div class="status-row">
+        <button class="primary" id="btnRec1" onclick="startTest('high')">⏺ Gravar</button>
+        <div id="result1-badge" style="display:none;" class="recorded-note">
+          <span class="check">✓</span><span class="note-name" id="result1-note">--</span><span>registrado</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- passo 2 -->
+    <div id="step2" class="card" style="opacity:0.45;pointer-events:none;transition:opacity 0.3s;">
+      <div class="card-title">2. Cante sua nota mais baixa</div>
+      <div class="card-desc">Agora pressione gravar e cante a nota mais baixa que conseguir confortavelmente durante 5 segundos. O sistema vai registrar o pico mais grave detectado.</div>
+
+      <div class="timer-ring-wrap" id="timer2-wrap" style="display:none;">
+        <div class="timer-ring">
+          <svg width="52" height="52" viewBox="0 0 52 52">
+            <circle cx="26" cy="26" r="22" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="4"/>
+            <circle id="ring2" cx="26" cy="26" r="22" fill="none" stroke="#5b9cf6" stroke-width="4"
+              stroke-dasharray="138.2" stroke-dashoffset="0" stroke-linecap="round"
+              style="transition:stroke-dashoffset 0.25s linear;"/>
+          </svg>
+          <div class="timer-text" id="timer2-text">5</div>
+        </div>
+        <div class="timer-label">
+          Nota atual: <strong id="live2-note">--</strong> &nbsp;|&nbsp;
+          Vale: <strong id="valley2-note" style="color:var(--blue);">--</strong>
+        </div>
+      </div>
+
+      <div class="chart-section-label">Frequência detectada — abaixo de C4</div>
+      <div class="chart-wrap">
+        <canvas id="chartLow" role="img" aria-label="Gráfico de frequência para nota mais baixa">Frequências abaixo de C4.</canvas>
+      </div>
+      <div class="status-row">
+        <button class="primary" id="btnRec2" onclick="startTest('low')">⏺ Gravar</button>
+        <div id="result2-badge" style="display:none;" class="recorded-note">
+          <span class="check">✓</span><span class="note-name" id="result2-note">--</span><span>registrado</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:1.5rem;">
+      <button class="wine-btn" id="btnResults" onclick="showResults()" disabled>Ver meu resultado ›</button>
+    </div>
+  </div>
+
+  <!-- TELA DE RESULTADO -->
+  <div id="result-screen">
+    <div class="result-hero">
+      <div class="result-headline">sua voz é classificada como</div>
+      <div class="result-type" id="res-type">--</div>
+      <div class="result-range-label" id="res-range">-- — --</div>
+      <div class="result-stats">
+        <div class="result-stat"><div class="result-stat-val" id="res-semitones">--</div><div class="result-stat-lbl">Semitons</div></div>
+        <div class="result-stat"><div class="result-stat-val" id="res-low">--</div><div class="result-stat-lbl">Nota mais baixa</div></div>
+        <div class="result-stat"><div class="result-stat-val" id="res-high">--</div><div class="result-stat-lbl">Nota mais alta</div></div>
+      </div>
+    </div>
+    <div class="result-desc-card">
+      <div class="result-desc-title">sobre esta voz</div>
+      <div class="result-desc-text" id="res-desc">--</div>
+    </div>
+    <div class="result-actions">
+      <button onclick="resetTest()">Refazer teste</button>
+      <button class="wine-btn" onclick="window.location.href='index.html'">Ir ao detector</button>
+    </div>
+  </div>
+
+</div>
+<script>
+var noteStrings=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+function noteFromPitch(f){return Math.round(12*(Math.log(f/440)/Math.log(2)))+69;}
+function freqFromNote(n){return 440*Math.pow(2,(n-69)/12);}
+function noteToString(n){return noteStrings[n%12]+(Math.floor(n/12)-1);}
+
+function autoCorrelate(buf,sr){
+  var SIZE=buf.length,rms=0;
+  for(var i=0;i<SIZE;i++) rms+=buf[i]*buf[i];
+  rms=Math.sqrt(rms/SIZE); if(rms<0.01) return -1;
+  var r1=0,r2=SIZE-1,thres=0.2;
+  for(var i=0;i<SIZE/2;i++) if(Math.abs(buf[i])<thres){r1=i;break;}
+  for(var i=1;i<SIZE/2;i++) if(Math.abs(buf[SIZE-i])<thres){r2=SIZE-i;break;}
+  buf=buf.slice(r1,r2); SIZE=buf.length;
+  var c=new Array(SIZE).fill(0);
+  for(var i=0;i<SIZE;i++) for(var j=0;j<SIZE-i;j++) c[i]+=buf[j]*buf[j+i];
+  var d=0; while(c[d]>c[d+1]) d++;
+  var maxval=-1,maxpos=-1;
+  for(var i=d;i<SIZE;i++) if(c[i]>maxval){maxval=c[i];maxpos=i;}
+  var T0=maxpos,x1=c[T0-1],x2=c[T0],x3=c[T0+1];
+  var a=(x1+x3-2*x2)/2,b=(x3-x1)/2;
+  if(a) T0=T0-b/(2*a);
+  return sr/T0;
+}
+
+var audioCtx=null,analyser=null,stream=null;
+var buf=new Float32Array(2048);
+var peakNote=null,valleyNote=null;
+var chartHigh=null,chartLow=null;
+
+function buildCharts(){
+  var base={responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false}},
+    scales:{x:{display:false},y:{border:{display:false},grid:{color:'rgba(100,110,120,0.15)'},
+    ticks:{color:'#7d8590',font:{size:11},callback:function(v){return v+'Hz';}}}}};
+  var optsH=JSON.parse(JSON.stringify(base));
+  optsH.scales.y.min=261; optsH.scales.y.max=2093;
+  chartHigh=new Chart(document.getElementById('chartHigh'),{type:'line',options:optsH,
+    data:{labels:[],datasets:[{data:[],borderColor:'#3ecfaa',borderWidth:1.5,pointRadius:0,tension:0.3,fill:false,spanGaps:true}]}});
+  var optsL=JSON.parse(JSON.stringify(base));
+  optsL.scales.y.min=65; optsL.scales.y.max=262;
+  chartLow=new Chart(document.getElementById('chartLow'),{type:'line',options:optsL,
+    data:{labels:[],datasets:[{data:[],borderColor:'#5b9cf6',borderWidth:1.5,pointRadius:0,tension:0.3,fill:false,spanGaps:true}]}});
+}
+
+function pushChart(chart,val){
+  var n=chart.data.labels.length;
+  chart.data.labels.push(n); chart.data.datasets[0].data.push(val);
+  if(chart.data.labels.length>120){chart.data.labels.shift();chart.data.datasets[0].data.shift();}
+  chart.update('none');
+}
+
+async function initAudio(){
+  if(audioCtx) return;
+  stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,autoGainControl:false,noiseSuppression:false}});
+  audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  analyser=audioCtx.createAnalyser(); analyser.fftSize=2048;
+  audioCtx.createMediaStreamSource(stream).connect(analyser);
+}
+
+async function startTest(mode){
+  try{await initAudio();}catch(e){alert('Não foi possível acessar o microfone: '+e.message);return;}
+  var isHigh=mode==='high';
+  var btnEl=document.getElementById(isHigh?'btnRec1':'btnRec2');
+  var timerWr=document.getElementById(isHigh?'timer1-wrap':'timer2-wrap');
+  var timerTx=document.getElementById(isHigh?'timer1-text':'timer2-text');
+  var ringEl=document.getElementById(isHigh?'ring1':'ring2');
+  var liveEl=document.getElementById(isHigh?'live1-note':'live2-note');
+  var peakEl=document.getElementById(isHigh?'peak1-note':'valley2-note');
+  var chart=isHigh?chartHigh:chartLow;
+  btnEl.disabled=true; timerWr.style.display='flex';
+  var bestNote=null,elapsed=0,DURATION=5000,TICK=100,circ=138.2;
+  var interval=setInterval(function(){
+    elapsed+=TICK;
+    var rem=Math.ceil((DURATION-elapsed)/1000);
+    timerTx.textContent=rem;
+    ringEl.style.strokeDashoffset=circ*(elapsed/DURATION);
+    analyser.getFloatTimeDomainData(buf);
+    var freq=autoCorrelate(buf,audioCtx.sampleRate);
+    if(freq>0){
+      var note=noteFromPitch(freq);
+      liveEl.textContent=noteToString(note);
+      pushChart(chart,Math.round(freqFromNote(note)));
+      if(isHigh){if(bestNote===null||note>bestNote){bestNote=note;peakEl.textContent=noteToString(note);}}
+      else      {if(bestNote===null||note<bestNote){bestNote=note;peakEl.textContent=noteToString(note);}}
+    } else { pushChart(chart,null); }
+    if(elapsed>=DURATION){
+      clearInterval(interval); timerWr.style.display='none';
+      if(bestNote!==null){
+        if(isHigh){
+          peakNote=bestNote;
+          document.getElementById('result1-note').textContent=noteToString(peakNote);
+          document.getElementById('result1-badge').style.display='flex';
+          document.getElementById('step2').style.opacity='1';
+          document.getElementById('step2').style.pointerEvents='auto';
+          document.getElementById('step1-crumb').className='step done';
+          document.getElementById('step2-crumb').className='step active';
+        } else {
+          valleyNote=bestNote;
+          document.getElementById('result2-note').textContent=noteToString(valleyNote);
+          document.getElementById('result2-badge').style.display='flex';
+          document.getElementById('btnResults').disabled=false;
+          document.getElementById('step2-crumb').className='step done';
+          document.getElementById('step3-crumb').className='step active';
+        }
+      } else { btnEl.disabled=false; alert('Nenhuma nota detectada. Tente cantar mais perto do microfone.'); }
+    }
+  },TICK);
+}
+
+var VOICE_TYPES=[
+  {name:'Soprano',      lowMid:60,highMid:72,range:'C4 — C6',desc:'O soprano é a voz feminina mais aguda. Caracteriza-se por uma qualidade brilhante e poderosa nas notas altas. É a voz mais comum em papéis de protagonista na ópera clássica.'},
+  {name:'Mezzo-soprano',lowMid:57,highMid:69,range:'A3 — A5',desc:'O mezzo-soprano situa-se entre o soprano e o contralto. Possui um timbre mais quente e encorpado, com boa potência tanto nas regiões médias quanto nas agudas.'},
+  {name:'Contralto',    lowMid:53,highMid:65,range:'F3 — F5',desc:'O contralto é a voz feminina mais grave e rara. Caracteriza-se por um som rico, profundo e aveludado. É muito valorizado em música coral e barroca.'},
+  {name:'Tenor',        lowMid:52,highMid:69,range:'C3 — C5',desc:'O tenor é a voz masculina mais aguda. Possui um som brilhante e penetrante, sendo protagonista em grande parte do repertório operístico.'},
+  {name:'Barítono',     lowMid:45,highMid:62,range:'G2 — G4',desc:'O barítono é a voz masculina mais comum. Equilibra o calor do baixo com a agilidade do tenor. Versátil e presente em todos os gêneros musicais.'},
+  {name:'Baixo',        lowMid:40,highMid:55,range:'E2 — E4',desc:'O baixo é a voz masculina mais grave. Possui um som profundo e imponente. É a fundação harmônica de coros e conjuntos vocais.'}
+];
+
+function classifyVoice(lowNote,highNote){
+  var best=null,bestScore=Infinity;
+  VOICE_TYPES.forEach(function(vt){
+    var score=Math.abs(lowNote-vt.lowMid)+Math.abs(highNote-vt.highMid);
+    if(score<bestScore){bestScore=score;best=vt;}
+  });
+  return best;
+}
+
+function showResults(){
+  if(peakNote===null||valleyNote===null) return;
+  var vt=classifyVoice(valleyNote,peakNote);
+  document.getElementById('res-type').textContent=vt.name;
+  document.getElementById('res-range').textContent=noteToString(valleyNote)+' — '+noteToString(peakNote);
+  document.getElementById('res-semitones').textContent=Math.abs(peakNote-valleyNote);
+  document.getElementById('res-low').textContent=noteToString(valleyNote);
+  document.getElementById('res-high').textContent=noteToString(peakNote);
+  document.getElementById('res-desc').textContent=vt.desc;
+  document.getElementById('test-screen').style.display='none';
+  document.getElementById('result-screen').style.display='block';
+}
+
+function resetTest(){
+  peakNote=null; valleyNote=null;
+  chartHigh.data.labels=[]; chartHigh.data.datasets[0].data=[]; chartHigh.update('none');
+  chartLow.data.labels=[];  chartLow.data.datasets[0].data=[];  chartLow.update('none');
+  ['result1-badge','result2-badge'].forEach(function(id){document.getElementById(id).style.display='none';});
+  document.getElementById('btnRec1').disabled=false;
+  document.getElementById('btnRec2').disabled=false;
+  document.getElementById('btnResults').disabled=true;
+  document.getElementById('step2').style.opacity='0.45';
+  document.getElementById('step2').style.pointerEvents='none';
+  document.getElementById('step1-crumb').className='step active';
+  document.getElementById('step2-crumb').className='step';
+  document.getElementById('step3-crumb').className='step';
+  document.getElementById('result-screen').style.display='none';
+  document.getElementById('test-screen').style.display='block';
+}
+
+document.addEventListener('DOMContentLoaded',buildCharts);
+</script>
+</body>
+</html>
