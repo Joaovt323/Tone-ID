@@ -4,7 +4,6 @@ node_modules/
 # variáveis de ambiente — NUNCA commitar isso
 .env
 .env.local
-.env.*.local
 
 # Vercel
 .vercel
