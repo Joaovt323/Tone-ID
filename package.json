@@ -1,0 +1,12 @@
+{
+  "name": "tone-id",
+  "version": "1.0.0",
+  "description": "Tone ID — Pitch detector, vocal range test and audio studio",
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "devDependencies": {
+    "vercel": "^33.0.0"
+  }
+}
