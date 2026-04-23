@@ -473,6 +473,38 @@ async function processInsight() {
 }
 
 async function renderInsight(vocalUrl, fullResult, originalUrl) {
+  if (vocalUrl) {
+    document.getElementById('audioVocal').src = vocalUrl;
+    document.getElementById('downloadVocal').href = vocalUrl;
+    document.getElementById('downloadVocal').download = 'vocal_isolado.wav';
+  }
+  document.getElementById('insightResult').style.display = 'block';
+  document.getElementById('btnResetInsight').style.display = 'inline-block';
+
+  var box = document.getElementById('insightBox');
+  box.innerHTML = `<div class="insight-loading"><div class="spinner"></div> Analisando backing vocal com IA...</div>`;
+
+  try {
+    // chama nosso backend — que chama a Anthropic com segurança
+    var resp = await fetch('/api/insight', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stems: Object.keys(fullResult) })
+    });
+
+    if (!resp.ok) {
+      var err = await resp.json();
+      throw new Error(err.error || 'Erro no servidor');
+    }
+
+    var parsed = await resp.json();
+    renderInsightData(parsed);
+
+  } catch(e) {
+    box.innerHTML = `<div style="font-size:13px;color:var(--coral);">Não foi possível gerar a análise: ${e.message}</div>`;
+  }
+}
+
   // mostra player da voz isolada
   if (vocalUrl) {
     document.getElementById('audioVocal').src = vocalUrl;
