@@ -34,29 +34,17 @@
     nav a.active { color:var(--teal); border-bottom-color:var(--teal); }
     nav .brand { font-family:'DM Mono',monospace; font-size:1rem; font-weight:500; color:var(--text); padding:8px 18px 8px 0; margin-right:12px; border-right:1px solid var(--border2); border-bottom:2px solid transparent; margin-bottom:-1px; }
 
-    /* ── cards ── */
     .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:1.25rem 1.4rem; margin-bottom:12px; }
     .card-title { font-size:15px; font-weight:500; margin-bottom:4px; }
     .card-desc  { font-size:13px; color:var(--muted); line-height:1.6; }
     .section-label { font-size:11px; color:var(--muted); letter-spacing:0.06em; text-transform:uppercase; margin-bottom:10px; }
 
-    /* ── tabs within page ── */
-    .mode-tabs { display:flex; gap:0; margin-bottom:16px; border:1px solid var(--border2); border-radius:var(--radius); overflow:hidden; }
+    .mode-tabs { display:flex; margin-bottom:16px; border:1px solid var(--border2); border-radius:var(--radius); overflow:hidden; }
     .mode-tab { flex:1; background:transparent; border:none; color:var(--muted); font-family:'DM Sans',sans-serif; font-size:13px; padding:10px; cursor:pointer; transition:background 0.15s,color 0.15s; }
     .mode-tab:hover { background:var(--surface2); color:var(--text); }
     .mode-tab.active { background:var(--surface2); color:var(--text); border-bottom:2px solid var(--teal); }
 
-    /* ── upload zone ── */
-    .upload-zone {
-      border:1.5px dashed var(--border2);
-      border-radius:var(--radius-lg);
-      padding:2.5rem 1.5rem;
-      text-align:center;
-      cursor:pointer;
-      transition:border-color 0.2s, background 0.2s;
-      margin-bottom:14px;
-      position:relative;
-    }
+    .upload-zone { border:1.5px dashed var(--border2); border-radius:var(--radius-lg); padding:2.5rem 1.5rem; text-align:center; cursor:pointer; transition:border-color 0.2s,background 0.2s; margin-bottom:14px; position:relative; }
     .upload-zone:hover, .upload-zone.dragover { border-color:var(--teal); background:rgba(62,207,170,0.04); }
     .upload-zone input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
     .upload-icon { font-size:2rem; margin-bottom:8px; }
@@ -64,22 +52,17 @@
     .upload-sub { font-size:12px; color:var(--muted); }
     .file-selected { font-family:'DM Mono',monospace; font-size:12px; color:var(--teal); margin-top:8px; }
 
-    /* ── buttons ── */
     button { cursor:pointer; background:var(--surface2); border:1px solid var(--border2); border-radius:var(--radius); color:var(--text); font-family:'DM Sans',sans-serif; font-size:13px; padding:8px 18px; transition:background 0.15s,opacity 0.15s; }
     button:hover:not(:disabled) { background:#252d3a; }
     button:disabled { opacity:0.38; cursor:not-allowed; }
     button.primary { background:var(--teal); border-color:var(--teal); color:#0d1117; font-weight:500; }
     button.primary:hover:not(:disabled) { background:#30b896; }
-    button.wine-btn { background:var(--wine); border-color:var(--wine); color:#fff; font-weight:500; }
-    button.wine-btn:hover:not(:disabled) { background:var(--wine-lt); }
 
-    /* ── progress ── */
     .progress-wrap { margin:14px 0; display:none; }
     .progress-bar-bg { height:4px; border-radius:2px; background:var(--surface2); overflow:hidden; }
     .progress-bar { height:100%; border-radius:2px; background:var(--teal); width:0%; transition:width 0.4s; }
     .progress-label { font-size:12px; color:var(--muted); margin-top:6px; }
 
-    /* ── stems player ── */
     .stems-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:4px; }
     @media(max-width:580px){ .stems-grid { grid-template-columns:1fr; } }
     .stem-card { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:1rem; }
@@ -95,42 +78,31 @@
     .download-link { font-size:11px; color:var(--blue); text-decoration:none; }
     .download-link:hover { text-decoration:underline; }
 
-    /* ── insight panel ── */
     .insight-box { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:1.1rem 1.2rem; margin-top:12px; }
     .insight-loading { display:flex; align-items:center; gap:10px; font-size:13px; color:var(--muted); }
     .spinner { width:16px; height:16px; border:2px solid var(--border2); border-top-color:var(--teal); border-radius:50%; animation:spin 0.8s linear infinite; flex-shrink:0; }
     @keyframes spin { to { transform:rotate(360deg); } }
-
     .insight-section { margin-bottom:14px; }
     .insight-section:last-child { margin-bottom:0; }
     .insight-section-title { font-size:11px; color:var(--muted); letter-spacing:0.06em; text-transform:uppercase; margin-bottom:8px; }
 
-    /* técnicas */
+    .key-badge { display:inline-flex; align-items:center; gap:8px; background:rgba(62,207,170,0.1); border:1px solid var(--teal); border-radius:var(--radius); padding:6px 14px; margin-bottom:12px; }
+    .key-badge .key-note { font-family:'DM Mono',monospace; font-size:1.4rem; font-weight:500; color:var(--teal); }
+    .key-badge .key-meta { font-size:12px; color:var(--muted); }
+
     .technique-list { display:flex; flex-direction:column; gap:8px; }
     .technique { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:10px 12px; }
     .technique-name { font-size:13px; font-weight:500; color:var(--text); margin-bottom:2px; }
     .technique-desc { font-size:12px; color:var(--muted); line-height:1.5; }
 
-    /* notas midi */
     .midi-row { display:flex; flex-wrap:wrap; gap:6px; }
-    .midi-note {
-      font-family:'DM Mono',monospace;
-      font-size:12px;
-      padding:4px 10px;
-      border-radius:6px;
-      background:var(--surface);
-      border:1px solid var(--border2);
-      color:var(--text);
-    }
-    .midi-note.root { background:rgba(62,207,170,0.12); border-color:var(--teal); color:var(--teal); }
-    .midi-note.harmony { background:rgba(91,156,246,0.10); border-color:var(--blue); color:var(--blue); }
-    .midi-note.color  { background:rgba(167,139,250,0.10); border-color:var(--purple); color:var(--purple); }
+    .midi-note { font-family:'DM Mono',monospace; font-size:12px; padding:4px 10px; border-radius:6px; background:var(--surface); border:1px solid var(--border2); color:var(--text); }
+    .midi-note.root    { background:rgba(62,207,170,0.12);  border-color:var(--teal);   color:var(--teal);   }
+    .midi-note.harmony { background:rgba(91,156,246,0.10);  border-color:var(--blue);   color:var(--blue);   }
+    .midi-note.color   { background:rgba(167,139,250,0.10); border-color:var(--purple); color:var(--purple); }
 
-    /* ── estado vazio ── */
     .empty-state { text-align:center; padding:2rem; color:var(--muted); font-size:13px; }
-    .empty-state .icon { font-size:2rem; margin-bottom:8px; opacity:0.4; }
-
-    /* ── error ── */
+    .empty-state .icon { font-size:2rem; margin-bottom:8px; opacity:0.4; display:block; }
     .error-msg { background:rgba(232,97,74,0.1); border:1px solid rgba(232,97,74,0.3); border-radius:var(--radius); padding:10px 14px; font-size:13px; color:var(--coral); margin-top:10px; display:none; }
   </style>
 </head>
@@ -144,21 +116,20 @@
     <a href="studio.html" class="active">studio</a>
   </nav>
 
-  <!-- modo tabs -->
   <div class="mode-tabs">
     <button class="mode-tab active" onclick="switchMode('stems')" id="tab-stems">Separação de stems</button>
     <button class="mode-tab" onclick="switchMode('insight')" id="tab-insight">Insight de backing vocal</button>
   </div>
 
-  <!-- ══ MODO: SEPARAÇÃO DE STEMS ══════════════════════════════════════════ -->
+  <!-- ══ STEMS ══════════════════════════════════════════════════════════════ -->
   <div id="mode-stems">
-
-    <div class="card" style="margin-bottom:12px;">
-      <div class="card-title" style="margin-bottom:4px;">Separar voz e instrumentos</div>
+    <div class="card">
+      <div class="card-title">Separar voz e instrumentos</div>
       <div class="card-desc">Faça upload de um arquivo de áudio. A IA vai isolar voz, bateria, baixo e outros instrumentos em faixas separadas para download.</div>
     </div>
 
-    <div class="upload-zone" id="uploadZoneStems" ondragover="onDragOver(event,'stems')" ondragleave="onDragLeave('stems')" ondrop="onDrop(event,'stems')">
+    <div class="upload-zone" id="uploadZoneStems"
+         ondragover="onDragOver(event,'stems')" ondragleave="onDragLeave('stems')" ondrop="onDrop(event,'stems')">
       <input type="file" accept="audio/*" id="fileStems" onchange="onFileChange('stems')">
       <div class="upload-icon">🎵</div>
       <div class="upload-title">Arraste um arquivo ou clique para selecionar</div>
@@ -166,126 +137,87 @@
       <div class="file-selected" id="fileStemsName"></div>
     </div>
 
-    <div style="display:flex; gap:8px; align-items:center;">
+    <div style="display:flex;gap:8px;align-items:center;">
       <button class="primary" id="btnProcessStems" onclick="processStems()" disabled>Processar</button>
-      <button onclick="resetStems()" id="btnResetStems" style="display:none;">Limpar</button>
+      <button id="btnResetStems" onclick="resetStems()" style="display:none;">Limpar</button>
     </div>
 
     <div class="error-msg" id="errorStems"></div>
-
     <div class="progress-wrap" id="progressStems">
       <div class="progress-bar-bg"><div class="progress-bar" id="progressBarStems"></div></div>
       <div class="progress-label" id="progressLabelStems">Enviando arquivo...</div>
     </div>
 
-    <!-- resultado stems -->
-    <div id="stemsResult" style="display:none; margin-top:16px;">
+    <div id="stemsResult" style="display:none;margin-top:16px;">
       <div class="section-label">Faixas isoladas</div>
       <div class="stems-grid" id="stemsGrid"></div>
     </div>
-
   </div>
 
-  <!-- ══ MODO: INSIGHT DE BACKING VOCAL ════════════════════════════════════ -->
+  <!-- ══ INSIGHT ════════════════════════════════════════════════════════════ -->
   <div id="mode-insight" style="display:none;">
-
-    <div class="card" style="margin-bottom:12px;">
-      <div class="card-title" style="margin-bottom:4px;">Análise de backing vocal</div>
-      <div class="card-desc">Faça upload de uma gravação vocal. A IA vai separar sua voz e analisar técnicas recomendadas de backing vocal, além de sugerir notas MIDI de harmonia e complemento.</div>
+    <div class="card">
+      <div class="card-title">Análise de backing vocal</div>
+      <div class="card-desc">Faça upload de uma gravação. A IA detecta a tonalidade e os acordes reais e recomenda técnicas de backing vocal com as notas MIDI ideais para harmonizar.</div>
     </div>
 
-    <div class="upload-zone" id="uploadZoneInsight" ondragover="onDragOver(event,'insight')" ondragleave="onDragLeave('insight')" ondrop="onDrop(event,'insight')">
+    <div class="upload-zone" id="uploadZoneInsight"
+         ondragover="onDragOver(event,'insight')" ondragleave="onDragLeave('insight')" ondrop="onDrop(event,'insight')">
       <input type="file" accept="audio/*" id="fileInsight" onchange="onFileChange('insight')">
       <div class="upload-icon">🎤</div>
-      <div class="upload-title">Arraste sua gravação vocal ou clique para selecionar</div>
+      <div class="upload-title">Arraste sua gravação ou clique para selecionar</div>
       <div class="upload-sub">MP3, WAV, M4A, OGG — até 50MB</div>
       <div class="file-selected" id="fileInsightName"></div>
     </div>
 
-    <div style="display:flex; gap:8px; align-items:center;">
+    <div style="display:flex;gap:8px;align-items:center;">
       <button class="primary" id="btnProcessInsight" onclick="processInsight()" disabled>Analisar</button>
-      <button onclick="resetInsight()" id="btnResetInsight" style="display:none;">Limpar</button>
+      <button id="btnResetInsight" onclick="resetInsight()" style="display:none;">Limpar</button>
     </div>
 
     <div class="error-msg" id="errorInsight"></div>
-
     <div class="progress-wrap" id="progressInsight">
       <div class="progress-bar-bg"><div class="progress-bar" id="progressBarInsight"></div></div>
       <div class="progress-label" id="progressLabelInsight">Enviando arquivo...</div>
     </div>
 
-    <!-- resultado insight -->
-    <div id="insightResult" style="display:none; margin-top:16px;">
-
-      <!-- player da voz isolada -->
-      <div class="card" style="margin-bottom:12px;">
-        <div class="section-label">Voz isolada</div>
-        <div class="stem-card" style="background:var(--surface2);">
-          <div class="stem-header">
-            <div class="stem-name">
-              <div class="stem-dot" style="background:var(--teal);"></div>
-              Vocal isolado
-            </div>
-            <div class="stem-controls">
-              <button class="btn-play" id="btnPlayVocal" onclick="togglePlay('audioVocal','btnPlayVocal')">▶</button>
-              <input type="range" class="vol-slider" min="0" max="1" step="0.01" value="1" oninput="setVolume('audioVocal',this.value)">
-              <a class="download-link" id="downloadVocal" href="#" download>baixar</a>
-            </div>
-          </div>
-          <audio id="audioVocal"></audio>
-        </div>
-      </div>
-
-      <!-- análise IA -->
+    <div id="insightResult" style="display:none;margin-top:16px;">
       <div class="card">
         <div class="section-label" style="margin-bottom:12px;">Análise de backing vocal</div>
         <div class="insight-box" id="insightBox">
-          <div class="empty-state"><div class="icon">🎵</div>A análise vai aparecer aqui após o processamento.</div>
+          <div class="empty-state"><span class="icon">🎵</span>A análise vai aparecer aqui após o processamento.</div>
         </div>
       </div>
-
     </div>
-
   </div>
 
 </div>
-
 <script>
-// ── utilidades de UI ──────────────────────────────────────────────────────────
+// ── UI helpers ────────────────────────────────────────────────────────────────
 function switchMode(mode) {
-  document.getElementById('mode-stems').style.display   = mode==='stems'   ? '' : 'none';
-  document.getElementById('mode-insight').style.display = mode==='insight' ? '' : 'none';
-  document.getElementById('tab-stems').classList.toggle('active',   mode==='stems');
-  document.getElementById('tab-insight').classList.toggle('active', mode==='insight');
+  document.getElementById('mode-stems').style.display   = mode === 'stems'   ? '' : 'none';
+  document.getElementById('mode-insight').style.display = mode === 'insight' ? '' : 'none';
+  document.getElementById('tab-stems').classList.toggle('active',   mode === 'stems');
+  document.getElementById('tab-insight').classList.toggle('active', mode === 'insight');
 }
 
-function showError(id, msg) {
-  var el = document.getElementById(id);
-  el.textContent = msg;
-  el.style.display = 'block';
+function showError(id, msg)  { var el=document.getElementById(id); el.textContent=msg; el.style.display='block'; }
+function hideError(id)       { document.getElementById(id).style.display='none'; }
+function setProgress(p, pct, label) {
+  document.getElementById('progress'+p).style.display='block';
+  document.getElementById('progressBar'+p).style.width=pct+'%';
+  document.getElementById('progressLabel'+p).textContent=label;
 }
-function hideError(id) { document.getElementById(id).style.display = 'none'; }
-
-function setProgress(prefix, pct, label) {
-  document.getElementById('progress'+prefix).style.display = 'block';
-  document.getElementById('progressBar'+prefix).style.width = pct+'%';
-  document.getElementById('progressLabel'+prefix).textContent = label;
-}
-function hideProgress(prefix) { document.getElementById('progress'+prefix).style.display = 'none'; }
+function hideProgress(p) { document.getElementById('progress'+p).style.display='none'; }
 
 // ── drag & drop ───────────────────────────────────────────────────────────────
-function onDragOver(e, mode) { e.preventDefault(); document.getElementById('uploadZone'+cap(mode)).classList.add('dragover'); }
+function cap(s) { return s.charAt(0).toUpperCase()+s.slice(1); }
+function onDragOver(e,mode)  { e.preventDefault(); document.getElementById('uploadZone'+cap(mode)).classList.add('dragover'); }
 function onDragLeave(mode)   { document.getElementById('uploadZone'+cap(mode)).classList.remove('dragover'); }
-function onDrop(e, mode)     { e.preventDefault(); onDragLeave(mode); var f=e.dataTransfer.files[0]; if(f) assignFile(mode,f); }
-function cap(s)              { return s.charAt(0).toUpperCase()+s.slice(1); }
+function onDrop(e,mode)      { e.preventDefault(); onDragLeave(mode); var f=e.dataTransfer.files[0]; if(f) assignFile(mode,f); }
 
 var selectedFiles = { stems: null, insight: null };
-
-function onFileChange(mode) {
-  var input = document.getElementById('file'+cap(mode));
-  if (input.files[0]) assignFile(mode, input.files[0]);
-}
-
+function onFileChange(mode) { var f=document.getElementById('file'+cap(mode)).files[0]; if(f) assignFile(mode,f); }
 function assignFile(mode, file) {
   selectedFiles[mode] = file;
   document.getElementById('file'+cap(mode)+'Name').textContent = file.name;
@@ -293,13 +225,13 @@ function assignFile(mode, file) {
 }
 
 // ── upload helper ─────────────────────────────────────────────────────────────
-async function uploadFile(file, progressPrefix) {
-  setProgress(progressPrefix, 10, 'Solicitando URL de upload...');
+async function uploadFile(file, prefix) {
+  setProgress(prefix, 10, 'Solicitando URL de upload...');
   var r1 = await fetch('/api/upload');
   if (!r1.ok) throw new Error('Falha ao obter URL de upload.');
   var { uploadUrl, downloadUrl } = await r1.json();
 
-  setProgress(progressPrefix, 30, 'Enviando arquivo...');
+  setProgress(prefix, 30, 'Enviando arquivo...');
   var r2 = await fetch(uploadUrl, {
     method: 'PUT',
     headers: { 'Content-Type': file.type || 'audio/mpeg' },
@@ -307,47 +239,45 @@ async function uploadFile(file, progressPrefix) {
   });
   if (!r2.ok) throw new Error('Falha no upload do arquivo.');
 
-  setProgress(progressPrefix, 50, 'Arquivo enviado. Criando job...');
+  setProgress(prefix, 50, 'Arquivo enviado. Criando job...');
   return downloadUrl;
 }
 
 // ── polling helper ────────────────────────────────────────────────────────────
-function pollJob(jobId, progressPrefix, onDone) {
+function pollJob(jobId, prefix, onDone) {
   var attempts = 0;
-  var maxAttempts = 60; 
   var interval = setInterval(async function() {
     attempts++;
     try {
-      var r = await fetch('/api/status?id='+jobId);
+      var r    = await fetch('/api/status?id='+jobId);
       var data = await r.json();
-      var pct = Math.min(90, 55 + attempts * 0.6);
-      setProgress(progressPrefix, pct, 'Processando na IA... ('+data.status+')');
-
+      setProgress(prefix, Math.min(90, 55+attempts*0.6), 'Processando na IA... ('+data.status+')');
       if (data.status === 'SUCCEEDED') {
         clearInterval(interval);
-        setProgress(progressPrefix, 100, 'Concluído!');
-        setTimeout(function(){ hideProgress(progressPrefix); }, 800);
+        setProgress(prefix, 100, 'Concluído!');
+        setTimeout(function(){ hideProgress(prefix); }, 800);
         onDone(data.result);
       } else if (data.status === 'FAILED') {
         clearInterval(interval);
-        hideProgress(progressPrefix);
-        throw new Error('O job falhou no servidor do Music AI.');
+        hideProgress(prefix);
+        showError('error'+prefix, 'O job falhou: '+(data.error?.message || 'erro desconhecido'));
       }
     } catch(e) {
       clearInterval(interval);
-      hideProgress(progressPrefix);
-      showError('error'+cap(progressPrefix), e.message);
+      hideProgress(prefix);
+      showError('error'+prefix, e.message);
     }
   }, 5000);
 }
 
 // ── STEMS ─────────────────────────────────────────────────────────────────────
 var STEM_META = {
-  vocals: { label:'Voz', color:'#3ecfaa' },
-  drums: { label:'Bateria', color:'#e8614a' },
-  bass: { label:'Baixo', color:'#5b9cf6' },
-  other: { label:'Outros', color:'#e09940' },
-  accompaniment: { label:'Acompanham.', color:'#a78bfa' }
+  vocals:        { label:'Voz',          color:'#3ecfaa' },
+  drums:         { label:'Bateria',      color:'#e8614a' },
+  bass:          { label:'Baixo',        color:'#5b9cf6' },
+  other:         { label:'Outros',       color:'#e09940' },
+  accompaniment: { label:'Acompanham.',  color:'#a78bfa' },
+  accompaniments:{ label:'Acompanham.',  color:'#a78bfa' },
 };
 
 async function processStems() {
@@ -355,21 +285,17 @@ async function processStems() {
   if (!file) return;
   hideError('errorStems');
   document.getElementById('btnProcessStems').disabled = true;
-
+  document.getElementById('stemsResult').style.display = 'none';
   try {
     var downloadUrl = await uploadFile(file, 'Stems');
     var r = await fetch('/api/job', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        name: 'Tone-ID stems - '+file.name,
-        workflow: 'music-ai/stems-vocals-accompaniment',
-        inputUrl: downloadUrl
-      })
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ name:'Tone-ID stems', workflow:'music-ai/stems-vocals-accompaniment', inputUrl:downloadUrl })
     });
     var { id } = await r.json();
     pollJob(id, 'Stems', renderStems);
   } catch(e) {
+    hideProgress('Stems');
     showError('errorStems', e.message);
     document.getElementById('btnProcessStems').disabled = false;
   }
@@ -378,32 +304,42 @@ async function processStems() {
 function renderStems(result) {
   var grid = document.getElementById('stemsGrid');
   grid.innerHTML = '';
-  Object.keys(result).forEach(key => {
-    var url = result[key];
-    var meta = STEM_META[key] || { label: key, color: '#7d8590' };
+  Object.keys(result).forEach(function(key) {
+    var url  = result[key];
+    var meta = STEM_META[key] || { label:key, color:'#7d8590' };
     var card = document.createElement('div');
     card.className = 'stem-card';
-    card.innerHTML = `
-      <div class="stem-header">
-        <div class="stem-name"><div class="stem-dot" style="background:${meta.color}"></div>${meta.label}</div>
-        <div class="stem-controls">
-          <button class="btn-play" onclick="togglePlay('audio_${key}','btn_${key}')" id="btn_${key}">▶</button>
-          <a class="download-link" href="${url}" download>baixar</a>
-        </div>
-      </div>
-      <audio id="audio_${key}" src="${url}"></audio>
-    `;
+    card.innerHTML =
+      '<div class="stem-header">' +
+        '<div class="stem-name"><div class="stem-dot" style="background:'+meta.color+'"></div>'+meta.label+'</div>' +
+        '<div class="stem-controls">' +
+          '<button class="btn-play" id="btn_'+key+'" onclick="togglePlay(\'audio_'+key+'\',\'btn_'+key+'\')">▶</button>' +
+          '<input type="range" class="vol-slider" min="0" max="1" step="0.01" value="1" oninput="setVolume(\'audio_'+key+'\',this.value)">' +
+          '<a class="download-link" href="'+url+'" download="'+key+'.wav" target="_blank">baixar</a>' +
+        '</div>' +
+      '</div>' +
+      '<audio id="audio_'+key+'" src="'+url+'" preload="none"></audio>';
     grid.appendChild(card);
   });
   document.getElementById('stemsResult').style.display = 'block';
   document.getElementById('btnResetStems').style.display = 'inline-block';
 }
 
-// ── INSIGHT DE BACKING VOCAL (MUSIC.AI VERSION) ───────────────────────────────
+function resetStems() {
+  selectedFiles.stems = null;
+  document.getElementById('fileStemsName').textContent = '';
+  document.getElementById('fileStems').value = '';
+  document.getElementById('btnProcessStems').disabled = true;
+  document.getElementById('btnResetStems').style.display = 'none';
+  document.getElementById('stemsResult').style.display = 'none';
+  document.getElementById('stemsGrid').innerHTML = '';
+  hideError('errorStems');
+}
+
+// ── INSIGHT ───────────────────────────────────────────────────────────────────
 async function processInsight() {
   var file = selectedFiles.insight;
   if (!file) return;
-  
   hideError('errorInsight');
   document.getElementById('btnProcessInsight').disabled = true;
   document.getElementById('insightResult').style.display = 'none';
@@ -412,28 +348,22 @@ async function processInsight() {
     // 1. Upload
     var downloadUrl = await uploadFile(file, 'Insight');
 
-    // 2. Criar Job 
-    var r = await fetch('/api/job', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        name: 'Tone-ID Insight - ' + file.name,
-        workflow: 'music-ai/key-bpm-detection', 
-        inputUrl: downloadUrl
-      })
+    // 2. Chama /api/insight — que busca o slug real e roda o workflow de acordes
+    setProgress('Insight', 55, 'Detectando tonalidade e acordes...');
+    var r = await fetch('/api/insight', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ inputUrl: downloadUrl })
     });
-    
-    if (!r.ok) {
-      const errorData = await r.json();
-      throw new Error(errorData.error || 'Falha ao criar análise.');
-    }
-    
-    var { id } = await r.json();
 
-    // 3. Polling
-    pollJob(id, 'Insight', function(result) {
-      renderInsightData(result);
-    });
+    if (!r.ok) {
+      var err = await r.json();
+      throw new Error(err.error || 'Erro no servidor');
+    }
+
+    var data = await r.json();
+    hideProgress('Insight');
+    renderInsightData(data);
 
   } catch(e) {
     hideProgress('Insight');
@@ -442,78 +372,84 @@ async function processInsight() {
   }
 }
 
-async function processInsight() {
-  var file = selectedFiles.insight;
-  if (!file) return;
-  
-  hideError('errorInsight');
-  document.getElementById('btnProcessInsight').disabled = true;
-  document.getElementById('insightResult').style.display = 'none';
+function renderInsightData(data) {
+  var box = document.getElementById('insightBox');
+  var html = '';
 
-  try {
-    // 1. Upload do arquivo para a Music.ai
-    var downloadUrl = await uploadFile(file, 'Insight');
-
-    // 2. Criar o Job
-    var r = await fetch('/api/job', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        name: 'Tone-ID Insight - ' + file.name,
-        workflow: 'music-ai/key-bpm-detection', 
-        inputUrl: downloadUrl
-      })
-    });
-    
-    if (!r.ok) {
-      const errorData = await r.json();
-      // Se der erro 400, aqui veremos o porquê
-      throw new Error(errorData.error || 'Falha ao criar análise.');
-    }
-    
-    var { id } = await r.json();
-
-    // 3. Polling
-    pollJob(id, 'Insight', function(result) {
-      // Quando a IA terminar, ela joga o resultado para a função
-      renderInsightData(result);
-    });
-
-  } catch(e) {
-    hideProgress('Insight');
-    showError('errorInsight', e.message);
-    document.getElementById('btnProcessInsight').disabled = false;
+  // tonalidade detectada
+  if (data.key && data.key !== 'Não detectada') {
+    html +=
+      '<div class="key-badge">' +
+        '<span class="key-note">'+data.key+'</span>' +
+        '<span class="key-meta">'+(data.scale||'')+(data.bpm ? ' · '+Math.round(data.bpm)+' BPM' : '')+'</span>' +
+      '</div>';
   }
+
+  // técnicas
+  if (data.tecnicas && data.tecnicas.length) {
+    html += '<div class="insight-section"><div class="insight-section-title">Técnicas recomendadas</div><div class="technique-list">';
+    data.tecnicas.forEach(function(t) {
+      html += '<div class="technique"><div class="technique-name">'+t.nome+'</div><div class="technique-desc">'+t.descricao+'</div></div>';
+    });
+    html += '</div></div>';
+  }
+
+  // notas MIDI
+  if (data.midi) {
+    html += '<div class="insight-section"><div class="insight-section-title">Notas MIDI sugeridas</div>';
+    var groups = [
+      { key:'root',    label:'Fundamental', cls:'root'    },
+      { key:'harmony', label:'Harmonia',    cls:'harmony' },
+      { key:'color',   label:'Cor',         cls:'color'   },
+    ];
+    groups.forEach(function(g) {
+      var notes = data.midi[g.key] || [];
+      if (!notes.length) return;
+      html += '<div style="margin-bottom:10px;"><div style="font-size:11px;color:var(--muted);margin-bottom:6px;">'+g.label+'</div><div class="midi-row">';
+      notes.forEach(function(n) { html += '<span class="midi-note '+g.cls+'">'+n+'</span>'; });
+      html += '</div></div>';
+    });
+    html += '</div>';
+  }
+
+  if (!html) {
+    html = '<div class="empty-state"><span class="icon">⚠️</span>Sem dados retornados pela análise.</div>';
+  }
+
+  box.innerHTML = html;
+  document.getElementById('insightResult').style.display = 'block';
+  document.getElementById('btnResetInsight').style.display = 'inline-block';
 }
 
-function getNextNote(root, semitones) {
-  const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-  let cleanRoot = root.replace('m', '').replace('maj', '').trim();
-  let idx = notes.indexOf(cleanRoot);
-  if (idx === -1) return root;
-  return notes[(idx + semitones) % 12];
-}
-
-// ── Funções de Reset e Player ────────────────────────────────────────────────
-function resetStems() { /* ... mantém seu código original de reset ... */ }
 function resetInsight() {
   selectedFiles.insight = null;
   document.getElementById('fileInsightName').textContent = '';
+  document.getElementById('fileInsight').value = '';
   document.getElementById('btnProcessInsight').disabled = true;
   document.getElementById('btnResetInsight').style.display = 'none';
   document.getElementById('insightResult').style.display = 'none';
+  document.getElementById('insightBox').innerHTML = '<div class="empty-state"><span class="icon">🎵</span>A análise vai aparecer aqui após o processamento.</div>';
   hideError('errorInsight');
 }
 
+// ── player ────────────────────────────────────────────────────────────────────
 var currentPlaying = null;
 function togglePlay(audioId, btnId) {
   var audio = document.getElementById(audioId);
   var btn   = document.getElementById(btnId);
-  if (currentPlaying && currentPlaying !== audio) { currentPlaying.pause(); }
-  if (audio.paused) { audio.play(); btn.textContent = '⏸'; currentPlaying = audio; } 
-  else { audio.pause(); btn.textContent = '▶'; }
+  if (!audio) return;
+  if (currentPlaying && currentPlaying !== audio) {
+    currentPlaying.pause();
+    document.querySelectorAll('.btn-play.playing').forEach(function(b){ b.textContent='▶'; b.classList.remove('playing'); });
+  }
+  if (audio.paused) {
+    audio.play(); btn.textContent='⏸'; btn.classList.add('playing'); currentPlaying=audio;
+    audio.onended = function(){ btn.textContent='▶'; btn.classList.remove('playing'); };
+  } else {
+    audio.pause(); btn.textContent='▶'; btn.classList.remove('playing');
+  }
 }
-
+function setVolume(audioId, val) { var a=document.getElementById(audioId); if(a) a.volume=parseFloat(val); }
 </script>
 </body>
 </html>
