@@ -1,7 +1,6 @@
 // api/insight.js
-// 1. Busca os slugs reais dos workflows da conta via GET /workflow
-// 2. Roda o workflow de acordes com o slug correto
-// 3. Devolve resultado + notas MIDI calculadas ao front-end
+// Insight para música completa (voz + instrumentos):
+// Detecta tonalidade e acordes via "Transcribe Chords"
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -21,80 +20,89 @@ export default async function handler(req, res) {
   const authHeader = { Authorization: API_KEY, 'Content-Type': 'application/json' };
 
   try {
-    // ── 1. Busca todos os workflows da conta e acha o slug de acordes ─────────
+    // ── 1. Busca slug do workflow de acordes ──────────────────────────────────
     const wfRes = await fetch('https://api.music.ai/v1/workflow?size=100', {
       headers: { Authorization: API_KEY },
     });
-    const wfData = await wfRes.json();
-    const workflows = wfData.workflows || [];
+    const { workflows = [] } = await wfRes.json();
 
-    // Procura workflow de transcrição de acordes/tonalidade pelo nome
     const chordsWf = workflows.find((w) => {
-      const name = w.name.toLowerCase();
-      return name.includes('chord') || name.includes('key') || name.includes('bpm');
+      const n = w.name.toLowerCase();
+      return n.includes('chord') || n.includes('key') || n.includes('bpm');
     });
 
     if (!chordsWf) {
-      const available = workflows.map((w) => `"${w.name}" → ${w.slug}`).join(' | ');
+      const available = workflows.map((w) => `"${w.name}"`).join(', ');
       return res.status(404).json({
-        error: `Nenhum workflow de acordes encontrado. Disponíveis: ${available}`,
+        error: `Workflow de acordes não encontrado. Disponíveis: ${available}`,
       });
     }
 
-    // ── 2. Cria o job com o slug real ─────────────────────────────────────────
+    // ── 2. Cria job e faz polling ─────────────────────────────────────────────
     const jobRes = await fetch('https://api.music.ai/v1/job', {
-      method: 'POST',
-      headers: authHeader,
+      method: 'POST', headers: authHeader,
       body: JSON.stringify({
         name: 'Tone-ID insight',
         workflow: chordsWf.slug,
         params: { inputUrl },
       }),
     });
-
     const jobData = await jobRes.json();
     if (!jobRes.ok) {
       return res.status(jobRes.status).json({ error: JSON.stringify(jobData) });
     }
 
-    const jobId = jobData.id;
-
-    // ── 3. Polling até SUCCEEDED ou FAILED (máx 5 min) ───────────────────────
-    let result = null;
+    let rawResult = null;
     for (let i = 0; i < 60; i++) {
       await new Promise((r) => setTimeout(r, 5000));
-      const statusRes = await fetch(`https://api.music.ai/v1/job/${jobId}`, {
-        headers: { Authorization: API_KEY },
-      });
-      const statusData = await statusRes.json();
+      const s  = await fetch(`https://api.music.ai/v1/job/${jobData.id}`, { headers: { Authorization: API_KEY } });
+      const sd = await s.json();
+      if (sd.status === 'SUCCEEDED') { rawResult = sd.result; break; }
+      if (sd.status === 'FAILED')    return res.status(500).json({ error: `Job falhou: ${JSON.stringify(sd.error)}` });
+    }
+    if (!rawResult) return res.status(500).json({ error: 'Timeout.' });
 
-      if (statusData.status === 'SUCCEEDED') {
-        result = statusData.result;
-        break;
-      }
-      if (statusData.status === 'FAILED') {
-        return res.status(500).json({
-          error: `Job falhou: ${JSON.stringify(statusData.error)}`,
-        });
+    // ── 3. Lê array de acordes ────────────────────────────────────────────────
+    let chordArray = [];
+    if (Array.isArray(rawResult)) {
+      chordArray = rawResult;
+    } else if (rawResult.chords && typeof rawResult.chords === 'string' && rawResult.chords.startsWith('http')) {
+      chordArray = await fetch(rawResult.chords).then((r) => r.json());
+    } else {
+      for (const k of ['chords','chord','result','data']) {
+        if (Array.isArray(rawResult[k])) { chordArray = rawResult[k]; break; }
       }
     }
 
-    if (!result) {
-      return res.status(500).json({ error: 'Timeout: job demorou mais de 5 minutos.' });
+    // ── 4. Extrai tonalidade dominante ────────────────────────────────────────
+    const CHORD_FIELDS = ['chord_basic_pop','chord_simple_pop','chord_majmin','chord_basic_jazz','chord_basic_nashville'];
+    const freq = {};
+    for (const seg of chordArray) {
+      let chord = null;
+      for (const field of CHORD_FIELDS) {
+        if (seg[field] && seg[field] !== 'N' && seg[field] !== 'null') { chord = seg[field]; break; }
+      }
+      if (chord) freq[chord] = (freq[chord] || 0) + 1;
     }
 
-    // ── 4. Extrai tonalidade e monta o insight ────────────────────────────────
-    const key   = result.key   || result.root  || result.tone  || null;
-    const scale = result.scale || result.mode  || result.type  || 'major';
-    const bpm   = result.bpm   || result.tempo || null;
+    const sorted        = Object.entries(freq).sort((a, b) => b[1] - a[1]);
+    const dominantChord = sorted[0]?.[0] || null;
+    const topChords     = sorted.slice(0, 5).map(([c]) => c);
+    const noChord       = sorted.length === 0;
+
+    let key = null, scale = 'major';
+    if (dominantChord) {
+      const m = dominantChord.match(/^([A-G][b#]?)(m(?!aj))?/);
+      if (m) { key = m[1]; scale = m[2] ? 'minor' : 'major'; }
+    }
 
     return res.status(200).json({
       workflowUsed: chordsWf.name,
       key:          key   || 'Não detectada',
-      scale:        scale || 'Não detectada',
-      bpm:          bpm   || null,
-      rawResult:    result,
-      tecnicas:     buildTecnicas(key, scale),
+      scale,
+      topChords,
+      noChordDetected: noChord,
+      tecnicas:     buildTecnicas(key, scale, noChord),
       midi:         buildMidi(key, scale),
     });
 
@@ -103,53 +111,37 @@ export default async function handler(req, res) {
   }
 }
 
-// ── Técnicas baseadas na tonalidade ──────────────────────────────────────────
-function buildTecnicas(key, scale) {
-  const isMinor = scale && scale.toLowerCase().includes('min');
-  const keyName = key || 'detectada';
-
+function buildTecnicas(key, scale, noChord) {
+  const isMinor = scale === 'minor';
+  const keyName = key || 'da música';
+  if (noChord) {
+    return [
+      { nome: 'Envie um áudio com instrumentos', descricao: 'A detecção de acordes funciona melhor com músicas completas (voz + instrumentos). Tente o modo de voz solo para análise apenas vocal.' },
+      { nome: 'Harmonias paralelas em terças',   descricao: 'Mesmo sem detectar a tonalidade, cantar uma terça acima da voz principal é uma técnica segura que funciona na maioria das músicas.' },
+      { nome: 'Dobramento em oitava',             descricao: 'Dobre sua voz exatamente uma oitava acima ou abaixo. Funciona independentemente da tonalidade.' },
+    ];
+  }
   return [
-    {
-      nome: 'Harmonias paralelas em terças',
-      descricao: `Cante a mesma melodia um intervalo de terça acima ou abaixo na tonalidade de ${keyName}. Funciona muito bem em refrões e pontes.`,
-    },
-    {
-      nome: isMinor ? 'Stacked vocals em modo menor' : 'Stacked vocals em modo maior',
-      descricao: `Grave a mesma linha vocal 3 ou mais vezes e empilhe as faixas. Na tonalidade de ${keyName} ${isMinor ? 'menor' : 'maior'} isso cria um efeito encorpado típico de produções modernas.`,
-    },
-    {
-      nome: 'Call and response',
-      descricao: 'O backing responde às frases da voz principal com linhas curtas e complementares, criando um diálogo entre as vozes. Ideal para versos.',
-    },
-    {
-      nome: 'Pad vocal (notas longas)',
-      descricao: `Sustente a tônica e a quinta de ${keyName} em notas longas e suaves, criando um colchão harmônico que preenche os espaços da melodia principal.`,
-    },
-    {
-      nome: 'Dobramento em oitava',
-      descricao: 'Dobre a voz principal exatamente uma oitava acima ou abaixo. Simples e eficaz para adicionar brilho ou profundidade sem conflitar com a melodia.',
-    },
+    { nome: 'Harmonias paralelas em terças',      descricao: `Cante a mesma melodia uma terça ${isMinor?'menor':'maior'} acima ou abaixo na tonalidade de ${keyName}.` },
+    { nome: `Stacked vocals em ${keyName}`,        descricao: `Grave a mesma linha vocal 3 ou mais vezes. No modo ${isMinor?'menor':'maior'} de ${keyName} cria um efeito encorpado.` },
+    { nome: 'Call and response',                   descricao: `O backing responde às frases da voz principal com linhas curtas em ${keyName}. Ideal para versos.` },
+    { nome: 'Pad vocal',                           descricao: `Sustente a tônica (${keyName}) e a quinta em notas longas para criar um colchão harmônico.` },
+    { nome: 'Dobramento em oitava',                descricao: `Dobre a voz principal uma oitava acima ou abaixo em ${keyName}. Simples e eficaz.` },
   ];
 }
 
-// ── Notas MIDI baseadas na tonalidade ────────────────────────────────────────
 const CHROMATIC = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NOTE_IDX  = Object.fromEntries(CHROMATIC.map((n, i) => [n, i]));
-
 function noteAt(root, semitones, octave) {
-  const base = NOTE_IDX[root] ?? 0;
-  return CHROMATIC[(base + semitones + 12) % 12] + octave;
+  return CHROMATIC[(( NOTE_IDX[root] ?? 0) + semitones + 12) % 12] + octave;
 }
-
 function buildMidi(key, scale) {
-  const root    = (key || 'C').replace(/\s.*/,'').trim();
-  const isMinor = scale && scale.toLowerCase().includes('min');
-  const third   = isMinor ? 3 : 4;
-  const sixth   = isMinor ? 8 : 9;
-
+  const root  = (key || 'C').replace(/\s.*/,'').trim();
+  const third = scale === 'minor' ? 3 : 4;
+  const sixth = scale === 'minor' ? 8 : 9;
   return {
-    root:    [ noteAt(root, 0, 4),    noteAt(root, 0, 5)    ],
-    harmony: [ noteAt(root, third, 4), noteAt(root, 7, 4), noteAt(root, third, 5), noteAt(root, 7, 5) ],
-    color:   [ noteAt(root, sixth, 4), noteAt(root, 2, 5),  noteAt(root, 11, 4)   ],
+    root:    [ noteAt(root,0,4),     noteAt(root,0,5)     ],
+    harmony: [ noteAt(root,third,4), noteAt(root,7,4), noteAt(root,third,5), noteAt(root,7,5) ],
+    color:   [ noteAt(root,sixth,4), noteAt(root,2,5), noteAt(root,11,4)   ],
   };
 }

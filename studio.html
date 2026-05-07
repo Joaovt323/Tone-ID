@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Studio — Tone ID</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -20,8 +21,6 @@
       --amber:    #e09940;
       --coral:    #e8614a;
       --purple:   #a78bfa;
-      --wine:     #8b2252;
-      --wine-lt:  #c9385a;
       --radius:   10px;
       --radius-lg:16px;
     }
@@ -29,7 +28,7 @@
     .page { max-width:860px; margin:0 auto; }
 
     nav { display:flex; align-items:center; margin-bottom:2.5rem; border-bottom:1px solid var(--border); }
-    nav a { text-decoration:none; color:var(--muted); font-size:13px; padding:8px 18px; border-bottom:2px solid transparent; margin-bottom:-1px; transition:color 0.15s,border-color 0.15s; }
+    nav a { text-decoration:none; color:var(--muted); font-size:13px; padding:8px 18px; border-bottom:2px solid transparent; margin-bottom:-1px; transition:color .15s,border-color .15s; }
     nav a:hover { color:var(--text); }
     nav a.active { color:var(--teal); border-bottom-color:var(--teal); }
     nav .brand { font-family:'DM Mono',monospace; font-size:1rem; font-weight:500; color:var(--text); padding:8px 18px 8px 0; margin-right:12px; border-right:1px solid var(--border2); border-bottom:2px solid transparent; margin-bottom:-1px; }
@@ -37,38 +36,52 @@
     .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:1.25rem 1.4rem; margin-bottom:12px; }
     .card-title { font-size:15px; font-weight:500; margin-bottom:4px; }
     .card-desc  { font-size:13px; color:var(--muted); line-height:1.6; }
-    .section-label { font-size:11px; color:var(--muted); letter-spacing:0.06em; text-transform:uppercase; margin-bottom:10px; }
+    .section-label { font-size:11px; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; margin-bottom:10px; }
 
+    /* ── mode tabs (top) ── */
     .mode-tabs { display:flex; margin-bottom:16px; border:1px solid var(--border2); border-radius:var(--radius); overflow:hidden; }
-    .mode-tab { flex:1; background:transparent; border:none; color:var(--muted); font-family:'DM Sans',sans-serif; font-size:13px; padding:10px; cursor:pointer; transition:background 0.15s,color 0.15s; }
-    .mode-tab:hover { background:var(--surface2); color:var(--text); }
+    .mode-tab  { flex:1; background:transparent; border:none; color:var(--muted); font-family:'DM Sans',sans-serif; font-size:13px; padding:10px; cursor:pointer; transition:background .15s,color .15s; }
+    .mode-tab:hover  { background:var(--surface2); color:var(--text); }
     .mode-tab.active { background:var(--surface2); color:var(--text); border-bottom:2px solid var(--teal); }
 
-    .upload-zone { border:1.5px dashed var(--border2); border-radius:var(--radius-lg); padding:2.5rem 1.5rem; text-align:center; cursor:pointer; transition:border-color 0.2s,background 0.2s; margin-bottom:14px; position:relative; }
-    .upload-zone:hover, .upload-zone.dragover { border-color:var(--teal); background:rgba(62,207,170,0.04); }
-    .upload-zone input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
-    .upload-icon { font-size:2rem; margin-bottom:8px; }
-    .upload-title { font-size:14px; font-weight:500; margin-bottom:4px; }
-    .upload-sub { font-size:12px; color:var(--muted); }
-    .file-selected { font-family:'DM Mono',monospace; font-size:12px; color:var(--teal); margin-top:8px; }
+    /* ── insight sub-tabs ── */
+    .sub-tabs { display:flex; margin-bottom:14px; gap:8px; }
+    .sub-tab  { flex:1; background:var(--surface2); border:1px solid var(--border2); border-radius:var(--radius); color:var(--muted); font-family:'DM Sans',sans-serif; font-size:13px; padding:10px 12px; cursor:pointer; text-align:left; transition:background .15s,color .15s,border-color .15s; }
+    .sub-tab .sub-tab-title   { font-weight:500; color:var(--text); margin-bottom:2px; }
+    .sub-tab .sub-tab-desc    { font-size:11px; color:var(--muted); }
+    .sub-tab:hover            { border-color:var(--border2); background:#212a38; }
+    .sub-tab.active           { border-color:var(--teal); background:rgba(62,207,170,.06); }
+    .sub-tab.active .sub-tab-title { color:var(--teal); }
 
-    button { cursor:pointer; background:var(--surface2); border:1px solid var(--border2); border-radius:var(--radius); color:var(--text); font-family:'DM Sans',sans-serif; font-size:13px; padding:8px 18px; transition:background 0.15s,opacity 0.15s; }
+    /* ── upload ── */
+    .upload-zone { border:1.5px dashed var(--border2); border-radius:var(--radius-lg); padding:2.5rem 1.5rem; text-align:center; cursor:pointer; transition:border-color .2s,background .2s; margin-bottom:14px; position:relative; }
+    .upload-zone:hover,.upload-zone.dragover { border-color:var(--teal); background:rgba(62,207,170,.04); }
+    .upload-zone input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+    .upload-icon  { font-size:2rem; margin-bottom:8px; }
+    .upload-title { font-size:14px; font-weight:500; margin-bottom:4px; }
+    .upload-sub   { font-size:12px; color:var(--muted); }
+    .file-selected{ font-family:'DM Mono',monospace; font-size:12px; color:var(--teal); margin-top:8px; }
+
+    /* ── buttons ── */
+    button { cursor:pointer; background:var(--surface2); border:1px solid var(--border2); border-radius:var(--radius); color:var(--text); font-family:'DM Sans',sans-serif; font-size:13px; padding:8px 18px; transition:background .15s,opacity .15s; }
     button:hover:not(:disabled) { background:#252d3a; }
-    button:disabled { opacity:0.38; cursor:not-allowed; }
+    button:disabled { opacity:.38; cursor:not-allowed; }
     button.primary { background:var(--teal); border-color:var(--teal); color:#0d1117; font-weight:500; }
     button.primary:hover:not(:disabled) { background:#30b896; }
 
+    /* ── progress ── */
     .progress-wrap { margin:14px 0; display:none; }
     .progress-bar-bg { height:4px; border-radius:2px; background:var(--surface2); overflow:hidden; }
-    .progress-bar { height:100%; border-radius:2px; background:var(--teal); width:0%; transition:width 0.4s; }
-    .progress-label { font-size:12px; color:var(--muted); margin-top:6px; }
+    .progress-bar    { height:100%; border-radius:2px; background:var(--teal); width:0%; transition:width .4s; }
+    .progress-label  { font-size:12px; color:var(--muted); margin-top:6px; }
 
+    /* ── stems ── */
     .stems-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:4px; }
     @media(max-width:580px){ .stems-grid { grid-template-columns:1fr; } }
     .stem-card { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:1rem; }
     .stem-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
-    .stem-name { font-size:13px; font-weight:500; display:flex; align-items:center; gap:6px; }
-    .stem-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+    .stem-name   { font-size:13px; font-weight:500; display:flex; align-items:center; gap:6px; }
+    .stem-dot    { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
     .stem-controls { display:flex; align-items:center; gap:8px; }
     .btn-play { width:32px; height:32px; border-radius:50%; border:1px solid var(--border2); background:transparent; display:flex; align-items:center; justify-content:center; font-size:12px; padding:0; flex-shrink:0; }
     .btn-play:hover { background:var(--surface); }
@@ -78,17 +91,28 @@
     .download-link { font-size:11px; color:var(--blue); text-decoration:none; }
     .download-link:hover { text-decoration:underline; }
 
+    /* ── insight boxes ── */
     .insight-box { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:1.1rem 1.2rem; margin-top:12px; }
     .insight-loading { display:flex; align-items:center; gap:10px; font-size:13px; color:var(--muted); }
-    .spinner { width:16px; height:16px; border:2px solid var(--border2); border-top-color:var(--teal); border-radius:50%; animation:spin 0.8s linear infinite; flex-shrink:0; }
+    .spinner { width:16px; height:16px; border:2px solid var(--border2); border-top-color:var(--teal); border-radius:50%; animation:spin .8s linear infinite; flex-shrink:0; }
     @keyframes spin { to { transform:rotate(360deg); } }
+
     .insight-section { margin-bottom:14px; }
     .insight-section:last-child { margin-bottom:0; }
-    .insight-section-title { font-size:11px; color:var(--muted); letter-spacing:0.06em; text-transform:uppercase; margin-bottom:8px; }
+    .insight-section-title { font-size:11px; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; margin-bottom:8px; }
 
-    .key-badge { display:inline-flex; align-items:center; gap:8px; background:rgba(62,207,170,0.1); border:1px solid var(--teal); border-radius:var(--radius); padding:6px 14px; margin-bottom:12px; }
+    .key-badge { display:inline-flex; align-items:center; gap:8px; background:rgba(62,207,170,.1); border:1px solid var(--teal); border-radius:var(--radius); padding:6px 14px; margin-bottom:12px; }
     .key-badge .key-note { font-family:'DM Mono',monospace; font-size:1.4rem; font-weight:500; color:var(--teal); }
     .key-badge .key-meta { font-size:12px; color:var(--muted); }
+
+    /* stats row */
+    .stats-row { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+    .stat-pill { background:var(--surface); border:1px solid var(--border2); border-radius:var(--radius); padding:8px 14px; text-align:center; }
+    .stat-pill .sp-val { font-family:'DM Mono',monospace; font-size:1.1rem; font-weight:500; color:var(--text); }
+    .stat-pill .sp-lbl { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-top:2px; }
+
+    /* note chart */
+    .chart-wrap { position:relative; width:100%; height:160px; margin-bottom:14px; }
 
     .technique-list { display:flex; flex-direction:column; gap:8px; }
     .technique { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:10px 12px; }
@@ -97,13 +121,13 @@
 
     .midi-row { display:flex; flex-wrap:wrap; gap:6px; }
     .midi-note { font-family:'DM Mono',monospace; font-size:12px; padding:4px 10px; border-radius:6px; background:var(--surface); border:1px solid var(--border2); color:var(--text); }
-    .midi-note.root    { background:rgba(62,207,170,0.12);  border-color:var(--teal);   color:var(--teal);   }
-    .midi-note.harmony { background:rgba(91,156,246,0.10);  border-color:var(--blue);   color:var(--blue);   }
-    .midi-note.color   { background:rgba(167,139,250,0.10); border-color:var(--purple); color:var(--purple); }
+    .midi-note.root    { background:rgba(62,207,170,.12);  border-color:var(--teal);   color:var(--teal);   }
+    .midi-note.harmony { background:rgba(91,156,246,.10);  border-color:var(--blue);   color:var(--blue);   }
+    .midi-note.color   { background:rgba(167,139,250,.10); border-color:var(--purple); color:var(--purple); }
 
     .empty-state { text-align:center; padding:2rem; color:var(--muted); font-size:13px; }
-    .empty-state .icon { font-size:2rem; margin-bottom:8px; opacity:0.4; display:block; }
-    .error-msg { background:rgba(232,97,74,0.1); border:1px solid rgba(232,97,74,0.3); border-radius:var(--radius); padding:10px 14px; font-size:13px; color:var(--coral); margin-top:10px; display:none; }
+    .empty-state .icon { font-size:2rem; margin-bottom:8px; opacity:.4; display:block; }
+    .error-msg { background:rgba(232,97,74,.1); border:1px solid rgba(232,97,74,.3); border-radius:var(--radius); padding:10px 14px; font-size:13px; color:var(--coral); margin-top:10px; display:none; }
   </style>
 </head>
 <body>
@@ -116,9 +140,10 @@
     <a href="studio.html" class="active">studio</a>
   </nav>
 
+  <!-- ── TOP TABS ──────────────────────────────────────────────────────────── -->
   <div class="mode-tabs">
-    <button class="mode-tab active" onclick="switchMode('stems')" id="tab-stems">Separação de stems</button>
-    <button class="mode-tab" onclick="switchMode('insight')" id="tab-insight">Insight de backing vocal</button>
+    <button class="mode-tab active" onclick="switchMode('stems')"   id="tab-stems">Separação de stems</button>
+    <button class="mode-tab"        onclick="switchMode('insight')"  id="tab-insight">Insight de backing vocal</button>
   </div>
 
   <!-- ══ STEMS ══════════════════════════════════════════════════════════════ -->
@@ -136,18 +161,15 @@
       <div class="upload-sub">MP3, WAV, M4A, OGG — até 50MB</div>
       <div class="file-selected" id="fileStemsName"></div>
     </div>
-
     <div style="display:flex;gap:8px;align-items:center;">
       <button class="primary" id="btnProcessStems" onclick="processStems()" disabled>Processar</button>
       <button id="btnResetStems" onclick="resetStems()" style="display:none;">Limpar</button>
     </div>
-
     <div class="error-msg" id="errorStems"></div>
     <div class="progress-wrap" id="progressStems">
       <div class="progress-bar-bg"><div class="progress-bar" id="progressBarStems"></div></div>
       <div class="progress-label" id="progressLabelStems">Enviando arquivo...</div>
     </div>
-
     <div id="stemsResult" style="display:none;margin-top:16px;">
       <div class="section-label">Faixas isoladas</div>
       <div class="stems-grid" id="stemsGrid"></div>
@@ -156,72 +178,147 @@
 
   <!-- ══ INSIGHT ════════════════════════════════════════════════════════════ -->
   <div id="mode-insight" style="display:none;">
-    <div class="card">
-      <div class="card-title">Análise de backing vocal</div>
-      <div class="card-desc">Faça upload de uma gravação. A IA detecta a tonalidade e os acordes reais e recomenda técnicas de backing vocal com as notas MIDI ideais para harmonizar.</div>
+
+    <!-- sub-tabs -->
+    <div class="sub-tabs">
+      <button class="sub-tab active" onclick="switchInsight('chords')" id="subtab-chords">
+        <div class="sub-tab-title">🎼 Música completa</div>
+        <div class="sub-tab-desc">Detecta tonalidade e acordes — envie voz + instrumentos</div>
+      </button>
+      <button class="sub-tab" onclick="switchInsight('vocal')" id="subtab-vocal">
+        <div class="sub-tab-title">🎤 Voz solo</div>
+        <div class="sub-tab-desc">Analisa pitches da voz isolada e gera gráfico de notas</div>
+      </button>
     </div>
 
-    <div class="upload-zone" id="uploadZoneInsight"
-         ondragover="onDragOver(event,'insight')" ondragleave="onDragLeave('insight')" ondrop="onDrop(event,'insight')">
-      <input type="file" accept="audio/*" id="fileInsight" onchange="onFileChange('insight')">
-      <div class="upload-icon">🎤</div>
-      <div class="upload-title">Arraste sua gravação ou clique para selecionar</div>
-      <div class="upload-sub">MP3, WAV, M4A, OGG — até 50MB</div>
-      <div class="file-selected" id="fileInsightName"></div>
-    </div>
-
-    <div style="display:flex;gap:8px;align-items:center;">
-      <button class="primary" id="btnProcessInsight" onclick="processInsight()" disabled>Analisar</button>
-      <button id="btnResetInsight" onclick="resetInsight()" style="display:none;">Limpar</button>
-    </div>
-
-    <div class="error-msg" id="errorInsight"></div>
-    <div class="progress-wrap" id="progressInsight">
-      <div class="progress-bar-bg"><div class="progress-bar" id="progressBarInsight"></div></div>
-      <div class="progress-label" id="progressLabelInsight">Enviando arquivo...</div>
-    </div>
-
-    <div id="insightResult" style="display:none;margin-top:16px;">
+    <!-- ── INSIGHT CHORDS ── -->
+    <div id="insight-chords">
       <div class="card">
-        <div class="section-label" style="margin-bottom:12px;">Análise de backing vocal</div>
-        <div class="insight-box" id="insightBox">
-          <div class="empty-state"><span class="icon">🎵</span>A análise vai aparecer aqui após o processamento.</div>
+        <div class="card-title">Análise harmônica</div>
+        <div class="card-desc">Envie uma música completa (voz + instrumentos). A IA detecta a tonalidade e os acordes reais para sugerir técnicas e notas MIDI de backing vocal.</div>
+      </div>
+
+      <div class="upload-zone" id="uploadZoneChords"
+           ondragover="onDragOver(event,'chords')" ondragleave="onDragLeave('chords')" ondrop="onDrop(event,'chords')">
+        <input type="file" accept="audio/*" id="fileChords" onchange="onFileChange('chords')">
+        <div class="upload-icon">🎵</div>
+        <div class="upload-title">Arraste um arquivo ou clique para selecionar</div>
+        <div class="upload-sub">MP3, WAV, M4A, OGG — até 50MB</div>
+        <div class="file-selected" id="fileChordsName"></div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="primary" id="btnProcessChords" onclick="processChords()" disabled>Analisar</button>
+        <button id="btnResetChords" onclick="resetChords()" style="display:none;">Limpar</button>
+      </div>
+      <div class="error-msg" id="errorChords"></div>
+      <div class="progress-wrap" id="progressChords">
+        <div class="progress-bar-bg"><div class="progress-bar" id="progressBarChords"></div></div>
+        <div class="progress-label" id="progressLabelChords">Enviando arquivo...</div>
+      </div>
+      <div id="chordsResult" style="display:none;margin-top:16px;">
+        <div class="card">
+          <div class="section-label" style="margin-bottom:12px;">Resultado</div>
+          <div class="insight-box" id="chordsInsightBox">
+            <div class="empty-state"><span class="icon">🎵</span>A análise aparecerá aqui.</div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-</div>
+    <!-- ── INSIGHT VOCAL ── -->
+    <div id="insight-vocal" style="display:none;">
+      <div class="card">
+        <div class="card-title">Análise de voz solo</div>
+        <div class="card-desc">Envie uma gravação de voz solo. A IA detecta cada nota cantada, gera um gráfico de pitches por segundo e sugere técnicas e notas MIDI ideais para o seu backing vocal.</div>
+      </div>
+
+      <div class="upload-zone" id="uploadZoneVocal"
+           ondragover="onDragOver(event,'vocal')" ondragleave="onDragLeave('vocal')" ondrop="onDrop(event,'vocal')">
+        <input type="file" accept="audio/*" id="fileVocal" onchange="onFileChange('vocal')">
+        <div class="upload-icon">🎤</div>
+        <div class="upload-title">Arraste sua gravação vocal ou clique para selecionar</div>
+        <div class="upload-sub">MP3, WAV, M4A, OGG — até 50MB</div>
+        <div class="file-selected" id="fileVocalName"></div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="primary" id="btnProcessVocal" onclick="processVocal()" disabled>Analisar voz</button>
+        <button id="btnResetVocal" onclick="resetVocal()" style="display:none;">Limpar</button>
+      </div>
+      <div class="error-msg" id="errorVocal"></div>
+      <div class="progress-wrap" id="progressVocal">
+        <div class="progress-bar-bg"><div class="progress-bar" id="progressBarVocal"></div></div>
+        <div class="progress-label" id="progressLabelVocal">Enviando arquivo...</div>
+      </div>
+
+      <div id="vocalResult" style="display:none;margin-top:16px;">
+        <!-- stats -->
+        <div class="card" style="margin-bottom:12px;">
+          <div class="section-label">Extensão vocal detectada</div>
+          <div class="stats-row" id="vocalStats"></div>
+        </div>
+
+        <!-- gráfico de notas -->
+        <div class="card" style="margin-bottom:12px;">
+          <div class="section-label">Notas por segundo</div>
+          <div class="chart-wrap">
+            <canvas id="vocalNoteChart" role="img" aria-label="Gráfico de notas detectadas ao longo do tempo"></canvas>
+          </div>
+        </div>
+
+        <!-- técnicas + MIDI -->
+        <div class="card">
+          <div class="section-label" style="margin-bottom:12px;">Sugestões de backing vocal</div>
+          <div class="insight-box" id="vocalInsightBox">
+            <div class="empty-state"><span class="icon">🎵</span>As sugestões aparecerão aqui.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /mode-insight -->
+
+</div><!-- /page -->
+
 <script>
+// ── Chart instance ────────────────────────────────────────────────────────────
+var vocalChart = null;
+
 // ── UI helpers ────────────────────────────────────────────────────────────────
 function switchMode(mode) {
-  document.getElementById('mode-stems').style.display   = mode === 'stems'   ? '' : 'none';
-  document.getElementById('mode-insight').style.display = mode === 'insight' ? '' : 'none';
-  document.getElementById('tab-stems').classList.toggle('active',   mode === 'stems');
-  document.getElementById('tab-insight').classList.toggle('active', mode === 'insight');
+  document.getElementById('mode-stems').style.display   = mode==='stems'   ? '' : 'none';
+  document.getElementById('mode-insight').style.display = mode==='insight' ? '' : 'none';
+  document.getElementById('tab-stems').classList.toggle('active',   mode==='stems');
+  document.getElementById('tab-insight').classList.toggle('active', mode==='insight');
 }
 
-function showError(id, msg)  { var el=document.getElementById(id); el.textContent=msg; el.style.display='block'; }
-function hideError(id)       { document.getElementById(id).style.display='none'; }
-function setProgress(p, pct, label) {
+function switchInsight(sub) {
+  document.getElementById('insight-chords').style.display = sub==='chords' ? '' : 'none';
+  document.getElementById('insight-vocal').style.display  = sub==='vocal'  ? '' : 'none';
+  document.getElementById('subtab-chords').classList.toggle('active', sub==='chords');
+  document.getElementById('subtab-vocal').classList.toggle('active',  sub==='vocal');
+}
+
+function cap(s) { return s.charAt(0).toUpperCase()+s.slice(1); }
+function showError(id,msg){ var el=document.getElementById(id); el.textContent=msg; el.style.display='block'; }
+function hideError(id)    { document.getElementById(id).style.display='none'; }
+function setProgress(p,pct,label){
   document.getElementById('progress'+p).style.display='block';
   document.getElementById('progressBar'+p).style.width=pct+'%';
   document.getElementById('progressLabel'+p).textContent=label;
 }
-function hideProgress(p) { document.getElementById('progress'+p).style.display='none'; }
+function hideProgress(p){ document.getElementById('progress'+p).style.display='none'; }
 
 // ── drag & drop ───────────────────────────────────────────────────────────────
-function cap(s) { return s.charAt(0).toUpperCase()+s.slice(1); }
-function onDragOver(e,mode)  { e.preventDefault(); document.getElementById('uploadZone'+cap(mode)).classList.add('dragover'); }
-function onDragLeave(mode)   { document.getElementById('uploadZone'+cap(mode)).classList.remove('dragover'); }
-function onDrop(e,mode)      { e.preventDefault(); onDragLeave(mode); var f=e.dataTransfer.files[0]; if(f) assignFile(mode,f); }
+function onDragOver(e,mode){ e.preventDefault(); document.getElementById('uploadZone'+cap(mode)).classList.add('dragover'); }
+function onDragLeave(mode) { document.getElementById('uploadZone'+cap(mode)).classList.remove('dragover'); }
+function onDrop(e,mode)    { e.preventDefault(); onDragLeave(mode); var f=e.dataTransfer.files[0]; if(f) assignFile(mode,f); }
 
-var selectedFiles = { stems: null, insight: null };
-function onFileChange(mode) { var f=document.getElementById('file'+cap(mode)).files[0]; if(f) assignFile(mode,f); }
-function assignFile(mode, file) {
-  selectedFiles[mode] = file;
-  document.getElementById('file'+cap(mode)+'Name').textContent = file.name;
-  document.getElementById('btnProcess'+cap(mode)).disabled = false;
+var selectedFiles = { stems:null, chords:null, vocal:null };
+function onFileChange(mode){ var f=document.getElementById('file'+cap(mode)).files[0]; if(f) assignFile(mode,f); }
+function assignFile(mode,file){
+  selectedFiles[mode]=file;
+  document.getElementById('file'+cap(mode)+'Name').textContent=file.name;
+  document.getElementById('btnProcess'+cap(mode)).disabled=false;
 }
 
 // ── upload helper ─────────────────────────────────────────────────────────────
@@ -230,226 +327,265 @@ async function uploadFile(file, prefix) {
   var r1 = await fetch('/api/upload');
   if (!r1.ok) throw new Error('Falha ao obter URL de upload.');
   var { uploadUrl, downloadUrl } = await r1.json();
-
   setProgress(prefix, 30, 'Enviando arquivo...');
-  var r2 = await fetch(uploadUrl, {
-    method: 'PUT',
-    headers: { 'Content-Type': file.type || 'audio/mpeg' },
-    body: file
-  });
+  var r2 = await fetch(uploadUrl, { method:'PUT', headers:{'Content-Type': file.type||'audio/mpeg'}, body:file });
   if (!r2.ok) throw new Error('Falha no upload do arquivo.');
-
-  setProgress(prefix, 50, 'Arquivo enviado. Criando job...');
+  setProgress(prefix, 50, 'Arquivo enviado...');
   return downloadUrl;
 }
 
 // ── polling helper ────────────────────────────────────────────────────────────
 function pollJob(jobId, prefix, onDone) {
-  var attempts = 0;
-  var interval = setInterval(async function() {
+  var attempts=0;
+  var interval=setInterval(async function(){
     attempts++;
     try {
-      var r    = await fetch('/api/status?id='+jobId);
-      var data = await r.json();
-      setProgress(prefix, Math.min(90, 55+attempts*0.6), 'Processando na IA... ('+data.status+')');
-      if (data.status === 'SUCCEEDED') {
+      var r=await fetch('/api/status?id='+jobId);
+      var d=await r.json();
+      setProgress(prefix, Math.min(90,55+attempts*.6), 'Processando na IA... ('+d.status+')');
+      if (d.status==='SUCCEEDED'){
         clearInterval(interval);
-        setProgress(prefix, 100, 'Concluído!');
-        setTimeout(function(){ hideProgress(prefix); }, 800);
-        onDone(data.result);
-      } else if (data.status === 'FAILED') {
-        clearInterval(interval);
-        hideProgress(prefix);
-        showError('error'+prefix, 'O job falhou: '+(data.error?.message || 'erro desconhecido'));
+        setProgress(prefix,100,'Concluído!');
+        setTimeout(function(){ hideProgress(prefix); },800);
+        onDone(d.result);
+      } else if (d.status==='FAILED'){
+        clearInterval(interval); hideProgress(prefix);
+        showError('error'+prefix,'O job falhou: '+(d.error?.message||'erro desconhecido'));
       }
-    } catch(e) {
-      clearInterval(interval);
-      hideProgress(prefix);
-      showError('error'+prefix, e.message);
-    }
-  }, 5000);
+    } catch(e){ clearInterval(interval); hideProgress(prefix); showError('error'+prefix,e.message); }
+  },5000);
 }
 
 // ── STEMS ─────────────────────────────────────────────────────────────────────
-var STEM_META = {
-  vocals:        { label:'Voz',          color:'#3ecfaa' },
-  drums:         { label:'Bateria',      color:'#e8614a' },
-  bass:          { label:'Baixo',        color:'#5b9cf6' },
-  other:         { label:'Outros',       color:'#e09940' },
-  accompaniment: { label:'Acompanham.',  color:'#a78bfa' },
-  accompaniments:{ label:'Acompanham.',  color:'#a78bfa' },
+var STEM_META={
+  vocals:{label:'Voz',color:'#3ecfaa'}, drums:{label:'Bateria',color:'#e8614a'},
+  bass:{label:'Baixo',color:'#5b9cf6'}, other:{label:'Outros',color:'#e09940'},
+  accompaniment:{label:'Acompanham.',color:'#a78bfa'}, accompaniments:{label:'Acompanham.',color:'#a78bfa'},
 };
 
-async function processStems() {
-  var file = selectedFiles.stems;
-  if (!file) return;
+async function processStems(){
+  var file=selectedFiles.stems; if(!file) return;
   hideError('errorStems');
-  document.getElementById('btnProcessStems').disabled = true;
-  document.getElementById('stemsResult').style.display = 'none';
+  document.getElementById('btnProcessStems').disabled=true;
+  document.getElementById('stemsResult').style.display='none';
   try {
-    var downloadUrl = await uploadFile(file, 'Stems');
-    var r = await fetch('/api/job', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ name:'Tone-ID stems', workflow:'music-ai/stems-vocals-accompaniment', inputUrl:downloadUrl })
-    });
-    var { id } = await r.json();
-    pollJob(id, 'Stems', renderStems);
-  } catch(e) {
-    hideProgress('Stems');
-    showError('errorStems', e.message);
-    document.getElementById('btnProcessStems').disabled = false;
-  }
+    var url=await uploadFile(file,'Stems');
+    var r=await fetch('/api/job',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name:'Tone-ID stems',workflow:'music-ai/stems-vocals-accompaniment',inputUrl:url})});
+    var {id}=await r.json();
+    pollJob(id,'Stems',renderStems);
+  } catch(e){ hideProgress('Stems'); showError('errorStems',e.message); document.getElementById('btnProcessStems').disabled=false; }
 }
 
-function renderStems(result) {
-  var grid = document.getElementById('stemsGrid');
-  grid.innerHTML = '';
-  Object.keys(result).forEach(function(key) {
-    var url  = result[key];
-    var meta = STEM_META[key] || { label:key, color:'#7d8590' };
-    var card = document.createElement('div');
-    card.className = 'stem-card';
-    card.innerHTML =
-      '<div class="stem-header">' +
-        '<div class="stem-name"><div class="stem-dot" style="background:'+meta.color+'"></div>'+meta.label+'</div>' +
-        '<div class="stem-controls">' +
-          '<button class="btn-play" id="btn_'+key+'" onclick="togglePlay(\'audio_'+key+'\',\'btn_'+key+'\')">▶</button>' +
-          '<input type="range" class="vol-slider" min="0" max="1" step="0.01" value="1" oninput="setVolume(\'audio_'+key+'\',this.value)">' +
-          '<a class="download-link" href="'+url+'" download="'+key+'.wav" target="_blank">baixar</a>' +
-        '</div>' +
-      '</div>' +
+function renderStems(result){
+  var grid=document.getElementById('stemsGrid'); grid.innerHTML='';
+  Object.keys(result).forEach(function(key){
+    var url=result[key]; var meta=STEM_META[key]||{label:key,color:'#7d8590'};
+    var card=document.createElement('div'); card.className='stem-card';
+    card.innerHTML=
+      '<div class="stem-header">'+
+        '<div class="stem-name"><div class="stem-dot" style="background:'+meta.color+'"></div>'+meta.label+'</div>'+
+        '<div class="stem-controls">'+
+          '<button class="btn-play" id="btn_'+key+'" onclick="togglePlay(\'audio_'+key+'\',\'btn_'+key+'\')">▶</button>'+
+          '<input type="range" class="vol-slider" min="0" max="1" step="0.01" value="1" oninput="setVolume(\'audio_'+key+'\',this.value)">'+
+          '<a class="download-link" href="'+url+'" download="'+key+'.wav" target="_blank">baixar</a>'+
+        '</div>'+
+      '</div>'+
       '<audio id="audio_'+key+'" src="'+url+'" preload="none"></audio>';
     grid.appendChild(card);
   });
-  document.getElementById('stemsResult').style.display = 'block';
-  document.getElementById('btnResetStems').style.display = 'inline-block';
+  document.getElementById('stemsResult').style.display='block';
+  document.getElementById('btnResetStems').style.display='inline-block';
 }
 
-function resetStems() {
-  selectedFiles.stems = null;
-  document.getElementById('fileStemsName').textContent = '';
-  document.getElementById('fileStems').value = '';
-  document.getElementById('btnProcessStems').disabled = true;
-  document.getElementById('btnResetStems').style.display = 'none';
-  document.getElementById('stemsResult').style.display = 'none';
-  document.getElementById('stemsGrid').innerHTML = '';
+function resetStems(){
+  selectedFiles.stems=null;
+  document.getElementById('fileStemsName').textContent='';
+  document.getElementById('fileStems').value='';
+  document.getElementById('btnProcessStems').disabled=true;
+  document.getElementById('btnResetStems').style.display='none';
+  document.getElementById('stemsResult').style.display='none';
+  document.getElementById('stemsGrid').innerHTML='';
   hideError('errorStems');
 }
 
-// ── INSIGHT ───────────────────────────────────────────────────────────────────
-async function processInsight() {
-  var file = selectedFiles.insight;
-  if (!file) return;
-  hideError('errorInsight');
-  document.getElementById('btnProcessInsight').disabled = true;
-  document.getElementById('insightResult').style.display = 'none';
-
+// ── INSIGHT CHORDS ────────────────────────────────────────────────────────────
+async function processChords(){
+  var file=selectedFiles.chords; if(!file) return;
+  hideError('errorChords');
+  document.getElementById('btnProcessChords').disabled=true;
+  document.getElementById('chordsResult').style.display='none';
   try {
-    // 1. Upload
-    var downloadUrl = await uploadFile(file, 'Insight');
+    var inputUrl=await uploadFile(file,'Chords');
+    setProgress('Chords',55,'Detectando tonalidade e acordes...');
+    var r=await fetch('/api/insight',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({inputUrl})});
+    if(!r.ok){ var e=await r.json(); throw new Error(e.error||'Erro no servidor'); }
+    var data=await r.json();
+    hideProgress('Chords');
+    renderChordsInsight(data);
+  } catch(e){ hideProgress('Chords'); showError('errorChords',e.message); document.getElementById('btnProcessChords').disabled=false; }
+}
 
-    // 2. Chama /api/insight — que busca o slug real e roda o workflow de acordes
-    setProgress('Insight', 55, 'Detectando tonalidade e acordes...');
-    var r = await fetch('/api/insight', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ inputUrl: downloadUrl })
-    });
+function renderChordsInsight(data){
+  var box=document.getElementById('chordsInsightBox'); var html='';
+  if(data.key&&data.key!=='Não detectada'){
+    html+='<div class="key-badge"><span class="key-note">'+data.key+'</span><span class="key-meta">'+data.scale+(data.bpm?' · '+Math.round(data.bpm)+' BPM':'')+'</span></div>';
+  }
+  html+=renderTecnicas(data.tecnicas);
+  html+=renderMidi(data.midi);
+  box.innerHTML=html||'<div class="empty-state"><span class="icon">⚠️</span>Sem dados retornados.</div>';
+  document.getElementById('chordsResult').style.display='block';
+  document.getElementById('btnResetChords').style.display='inline-block';
+}
 
-    if (!r.ok) {
-      var err = await r.json();
-      throw new Error(err.error || 'Erro no servidor');
+function resetChords(){
+  selectedFiles.chords=null;
+  document.getElementById('fileChordsName').textContent='';
+  document.getElementById('fileChords').value='';
+  document.getElementById('btnProcessChords').disabled=true;
+  document.getElementById('btnResetChords').style.display='none';
+  document.getElementById('chordsResult').style.display='none';
+  hideError('errorChords');
+}
+
+// ── INSIGHT VOCAL ─────────────────────────────────────────────────────────────
+async function processVocal(){
+  var file=selectedFiles.vocal; if(!file) return;
+  hideError('errorVocal');
+  document.getElementById('btnProcessVocal').disabled=true;
+  document.getElementById('vocalResult').style.display='none';
+  try {
+    var inputUrl=await uploadFile(file,'Vocal');
+    setProgress('Vocal',55,'Analisando pitches da voz...');
+    var r=await fetch('/api/insight-vocal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({inputUrl})});
+    if(!r.ok){ var e=await r.json(); throw new Error(e.error||'Erro no servidor'); }
+    var data=await r.json();
+    hideProgress('Vocal');
+    if(data.noNoteDetected){ showError('errorVocal','Nenhuma nota detectada. Verifique se o arquivo contém voz clara.'); document.getElementById('btnProcessVocal').disabled=false; return; }
+    renderVocalInsight(data);
+  } catch(e){ hideProgress('Vocal'); showError('errorVocal',e.message); document.getElementById('btnProcessVocal').disabled=false; }
+}
+
+function renderVocalInsight(data){
+  // ── stats pills ──
+  var statsEl=document.getElementById('vocalStats'); statsEl.innerHTML='';
+  var s=data.stats||{};
+  var pills=[
+    {val:s.lowestNote||'--',  lbl:'Nota mais baixa'},
+    {val:s.highestNote||'--', lbl:'Nota mais alta'},
+    {val:s.centerNote||'--',  lbl:'Nota central'},
+    {val:(s.semitones||'--'), lbl:'Semitons'},
+  ];
+  pills.forEach(function(p){
+    var d=document.createElement('div'); d.className='stat-pill';
+    d.innerHTML='<div class="sp-val">'+p.val+'</div><div class="sp-lbl">'+p.lbl+'</div>';
+    statsEl.appendChild(d);
+  });
+
+  // ── gráfico de notas ──
+  var points=data.points||[];
+  var NOTE_TO_MIDI=function(note){
+    var names=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+    var m=note.match(/^([A-G][#]?)(-?\d+)$/); if(!m) return null;
+    var idx=names.indexOf(m[1]); if(idx<0) return null;
+    return (parseInt(m[2])+1)*12+idx;
+  };
+
+  var labels=points.map(function(p){ return p.time+'s'; });
+  var values=points.map(function(p){ return NOTE_TO_MIDI(p.note); });
+
+  if(vocalChart){ vocalChart.destroy(); vocalChart=null; }
+  var ctx=document.getElementById('vocalNoteChart');
+  vocalChart=new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:labels,
+      datasets:[{
+        label:'Nota (MIDI)',
+        data:values,
+        borderColor:'#3ecfaa',
+        borderWidth:1.5,
+        pointRadius:0,
+        tension:0.3,
+        fill:false,
+        spanGaps:true,
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false, animation:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ display:true, ticks:{ color:'#7d8590', font:{size:10}, maxTicksLimit:10 }, grid:{color:'rgba(100,110,120,0.1)'}, border:{display:false} },
+        y:{ display:true, ticks:{ color:'#7d8590', font:{size:10},
+            callback:function(v){
+              var names=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+              return names[v%12]+(Math.floor(v/12)-1);
+            }
+          },
+          grid:{color:'rgba(100,110,120,0.15)'}, border:{display:false}
+        }
+      }
     }
+  });
 
-    var data = await r.json();
-    hideProgress('Insight');
-    renderInsightData(data);
+  // ── técnicas + midi ──
+  var box=document.getElementById('vocalInsightBox');
+  var html=renderTecnicas(data.tecnicas)+renderMidi(data.midi);
+  box.innerHTML=html||'<div class="empty-state"><span class="icon">⚠️</span>Sem sugestões geradas.</div>';
 
-  } catch(e) {
-    hideProgress('Insight');
-    showError('errorInsight', e.message);
-    document.getElementById('btnProcessInsight').disabled = false;
-  }
+  document.getElementById('vocalResult').style.display='block';
+  document.getElementById('btnResetVocal').style.display='inline-block';
 }
 
-function renderInsightData(data) {
-  var box = document.getElementById('insightBox');
-  var html = '';
-
-  // tonalidade detectada
-  if (data.key && data.key !== 'Não detectada') {
-    html +=
-      '<div class="key-badge">' +
-        '<span class="key-note">'+data.key+'</span>' +
-        '<span class="key-meta">'+(data.scale||'')+(data.bpm ? ' · '+Math.round(data.bpm)+' BPM' : '')+'</span>' +
-      '</div>';
-  }
-
-  // técnicas
-  if (data.tecnicas && data.tecnicas.length) {
-    html += '<div class="insight-section"><div class="insight-section-title">Técnicas recomendadas</div><div class="technique-list">';
-    data.tecnicas.forEach(function(t) {
-      html += '<div class="technique"><div class="technique-name">'+t.nome+'</div><div class="technique-desc">'+t.descricao+'</div></div>';
-    });
-    html += '</div></div>';
-  }
-
-  // notas MIDI
-  if (data.midi) {
-    html += '<div class="insight-section"><div class="insight-section-title">Notas MIDI sugeridas</div>';
-    var groups = [
-      { key:'root',    label:'Fundamental', cls:'root'    },
-      { key:'harmony', label:'Harmonia',    cls:'harmony' },
-      { key:'color',   label:'Cor',         cls:'color'   },
-    ];
-    groups.forEach(function(g) {
-      var notes = data.midi[g.key] || [];
-      if (!notes.length) return;
-      html += '<div style="margin-bottom:10px;"><div style="font-size:11px;color:var(--muted);margin-bottom:6px;">'+g.label+'</div><div class="midi-row">';
-      notes.forEach(function(n) { html += '<span class="midi-note '+g.cls+'">'+n+'</span>'; });
-      html += '</div></div>';
-    });
-    html += '</div>';
-  }
-
-  if (!html) {
-    html = '<div class="empty-state"><span class="icon">⚠️</span>Sem dados retornados pela análise.</div>';
-  }
-
-  box.innerHTML = html;
-  document.getElementById('insightResult').style.display = 'block';
-  document.getElementById('btnResetInsight').style.display = 'inline-block';
+function resetVocal(){
+  selectedFiles.vocal=null;
+  document.getElementById('fileVocalName').textContent='';
+  document.getElementById('fileVocal').value='';
+  document.getElementById('btnProcessVocal').disabled=true;
+  document.getElementById('btnResetVocal').style.display='none';
+  document.getElementById('vocalResult').style.display='none';
+  document.getElementById('vocalStats').innerHTML='';
+  document.getElementById('vocalInsightBox').innerHTML='<div class="empty-state"><span class="icon">🎵</span>As sugestões aparecerão aqui.</div>';
+  if(vocalChart){ vocalChart.destroy(); vocalChart=null; }
+  hideError('errorVocal');
 }
 
-function resetInsight() {
-  selectedFiles.insight = null;
-  document.getElementById('fileInsightName').textContent = '';
-  document.getElementById('fileInsight').value = '';
-  document.getElementById('btnProcessInsight').disabled = true;
-  document.getElementById('btnResetInsight').style.display = 'none';
-  document.getElementById('insightResult').style.display = 'none';
-  document.getElementById('insightBox').innerHTML = '<div class="empty-state"><span class="icon">🎵</span>A análise vai aparecer aqui após o processamento.</div>';
-  hideError('errorInsight');
+// ── shared renderers ──────────────────────────────────────────────────────────
+function renderTecnicas(tecnicas){
+  if(!tecnicas||!tecnicas.length) return '';
+  var html='<div class="insight-section"><div class="insight-section-title">Técnicas recomendadas</div><div class="technique-list">';
+  tecnicas.forEach(function(t){
+    html+='<div class="technique"><div class="technique-name">'+t.nome+'</div><div class="technique-desc">'+t.descricao+'</div></div>';
+  });
+  return html+'</div></div>';
+}
+
+function renderMidi(midi){
+  if(!midi) return '';
+  var groups=[
+    {key:'root',    label:'Fundamental', cls:'root'},
+    {key:'harmony', label:'Harmonia',    cls:'harmony'},
+    {key:'color',   label:'Cor',         cls:'color'},
+  ];
+  var html='<div class="insight-section"><div class="insight-section-title">Notas MIDI sugeridas</div>';
+  groups.forEach(function(g){
+    var notes=midi[g.key]||[]; if(!notes.length) return;
+    html+='<div style="margin-bottom:10px;"><div style="font-size:11px;color:var(--muted);margin-bottom:6px;">'+g.label+'</div><div class="midi-row">';
+    notes.forEach(function(n){ html+='<span class="midi-note '+g.cls+'">'+n+'</span>'; });
+    html+='</div></div>';
+  });
+  return html+'</div>';
 }
 
 // ── player ────────────────────────────────────────────────────────────────────
-var currentPlaying = null;
-function togglePlay(audioId, btnId) {
-  var audio = document.getElementById(audioId);
-  var btn   = document.getElementById(btnId);
-  if (!audio) return;
-  if (currentPlaying && currentPlaying !== audio) {
-    currentPlaying.pause();
-    document.querySelectorAll('.btn-play.playing').forEach(function(b){ b.textContent='▶'; b.classList.remove('playing'); });
-  }
-  if (audio.paused) {
-    audio.play(); btn.textContent='⏸'; btn.classList.add('playing'); currentPlaying=audio;
-    audio.onended = function(){ btn.textContent='▶'; btn.classList.remove('playing'); };
-  } else {
-    audio.pause(); btn.textContent='▶'; btn.classList.remove('playing');
-  }
+var currentPlaying=null;
+function togglePlay(audioId,btnId){
+  var audio=document.getElementById(audioId); var btn=document.getElementById(btnId); if(!audio) return;
+  if(currentPlaying&&currentPlaying!==audio){ currentPlaying.pause(); document.querySelectorAll('.btn-play.playing').forEach(function(b){ b.textContent='▶'; b.classList.remove('playing'); }); }
+  if(audio.paused){ audio.play(); btn.textContent='⏸'; btn.classList.add('playing'); currentPlaying=audio; audio.onended=function(){ btn.textContent='▶'; btn.classList.remove('playing'); }; }
+  else { audio.pause(); btn.textContent='▶'; btn.classList.remove('playing'); }
 }
-function setVolume(audioId, val) { var a=document.getElementById(audioId); if(a) a.volume=parseFloat(val); }
+function setVolume(audioId,val){ var a=document.getElementById(audioId); if(a) a.volume=parseFloat(val); }
 </script>
 </body>
 </html>
