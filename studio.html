@@ -412,7 +412,7 @@ async function processInsight() {
     // 1. Upload
     var downloadUrl = await uploadFile(file, 'Insight');
 
-    // 2. Criar Job - ATENÇÃO: Mudei o workflow para music-ai aqui
+    // 2. Criar Job 
     var r = await fetch('/api/job', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
@@ -430,7 +430,7 @@ async function processInsight() {
     
     var { id } = await r.json();
 
-    // 3. Polling - É AQUI que você adiciona o pollJob que "não existia"
+    // 3. Polling
     pollJob(id, 'Insight', function(result) {
       renderInsightData(result);
     });
@@ -442,37 +442,48 @@ async function processInsight() {
   }
 }
 
-function renderInsightData(result) {
-  const key = result.key || "Não identificado";
-  const scale = result.scale === 'major' ? 'Maior' : 'Menor';
-  const bpm = result.bpm ? Math.round(result.bpm) : '--';
+async function processInsight() {
+  var file = selectedFiles.insight;
+  if (!file) return;
   
-  document.getElementById('insightResult').style.display = 'block';
-  document.getElementById('btnResetInsight').style.display = 'inline-flex';
-  
-  document.getElementById('insightBox').innerHTML = `
-    <div class="insight-section">
-      <div class="insight-section-title">Análise de Tonalidade</div>
-      <div class="technique" style="border-left: 4px solid var(--teal);">
-        <div class="technique-name">Tom Detectado: ${key} ${scale}</div>
-        <div class="technique-desc">Ritmo: ${bpm} BPM</div>
-      </div>
-    </div>
+  hideError('errorInsight');
+  document.getElementById('btnProcessInsight').disabled = true;
+  document.getElementById('insightResult').style.display = 'none';
+
+  try {
+    // 1. Upload do arquivo para a Music.ai
+    var downloadUrl = await uploadFile(file, 'Insight');
+
+    // 2. Criar o Job
+    var r = await fetch('/api/job', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        name: 'Tone-ID Insight - ' + file.name,
+        workflow: 'music-ai/key-bpm-detection', 
+        inputUrl: downloadUrl
+      })
+    });
     
-    <div class="insight-section">
-      <div class="insight-section-title">Dicas para Backing Vocal</div>
-      <div class="technique-list">
-        <div class="technique">
-          <div class="technique-name">Harmonização em Terças</div>
-          <div class="technique-desc">Como a música está em ${key}, tente cantar a 3ª nota da escala (${getNextNote(key, 4)}) para criar uma harmonia clássica e brilhante.</div>
-        </div>
-        <div class="technique">
-          <div class="technique-name">Notas de Apoio (Power Notes)</div>
-          <div class="technique-desc">Use as notas ${key} (Fundamental) e ${getNextNote(key, 7)} (Quinta) para reforçar o refrão com segurança.</div>
-        </div>
-      </div>
-    </div>
-  `;
+    if (!r.ok) {
+      const errorData = await r.json();
+      // Se der erro 400, aqui veremos o porquê
+      throw new Error(errorData.error || 'Falha ao criar análise.');
+    }
+    
+    var { id } = await r.json();
+
+    // 3. Polling
+    pollJob(id, 'Insight', function(result) {
+      // Quando a IA terminar, ela joga o resultado para a função
+      renderInsightData(result);
+    });
+
+  } catch(e) {
+    hideProgress('Insight');
+    showError('errorInsight', e.message);
+    document.getElementById('btnProcessInsight').disabled = false;
+  }
 }
 
 function getNextNote(root, semitones) {
