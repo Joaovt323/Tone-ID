@@ -1,6 +1,6 @@
 // api/insight.js
-// Insight para música completa (voz + instrumentos):
-// Detecta tonalidade e acordes via "Transcribe Chords"
+// Insight para música completa (voz + instrumentos)
+// Usa workflow "Transcribe Chords" para detectar tonalidade e acordes reais
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -8,73 +8,62 @@ export default async function handler(req, res) {
   }
 
   const API_KEY = process.env.MUSICAI_KEY;
-  if (!API_KEY) {
-    return res.status(500).json({ error: 'MUSICAI_KEY não configurada no servidor.' });
-  }
+  if (!API_KEY) return res.status(500).json({ error: 'MUSICAI_KEY não configurada.' });
 
   const { inputUrl } = req.body;
-  if (!inputUrl) {
-    return res.status(400).json({ error: 'Campo obrigatório: inputUrl' });
-  }
+  if (!inputUrl) return res.status(400).json({ error: 'Campo obrigatório: inputUrl' });
 
   const authHeader = { Authorization: API_KEY, 'Content-Type': 'application/json' };
 
   try {
     // ── 1. Busca slug do workflow de acordes ──────────────────────────────────
-    const wfRes = await fetch('https://api.music.ai/v1/workflow?size=100', {
-      headers: { Authorization: API_KEY },
-    });
-    const { workflows = [] } = await wfRes.json();
+    const wfRes   = await fetch('https://api.music.ai/v1/workflow?size=100', { headers: { Authorization: API_KEY } });
+    const wfData  = await wfRes.json();
+    const workflows = wfData.workflows || [];
 
     const chordsWf = workflows.find((w) => {
-      const n = w.name.toLowerCase();
-      return n.includes('chord') || n.includes('key') || n.includes('bpm');
+      const name = w.name.toLowerCase();
+      return name.includes('chord') || name.includes('key') || name.includes('bpm');
     });
 
     if (!chordsWf) {
-      const available = workflows.map((w) => `"${w.name}"`).join(', ');
-      return res.status(404).json({
-        error: `Workflow de acordes não encontrado. Disponíveis: ${available}`,
-      });
+      const available = workflows.map((w) => `"${w.name}" → ${w.slug}`).join(' | ');
+      return res.status(404).json({ error: `Workflow de acordes não encontrado. Disponíveis: ${available}` });
     }
 
-    // ── 2. Cria job e faz polling ─────────────────────────────────────────────
-    const jobRes = await fetch('https://api.music.ai/v1/job', {
+    // ── 2. Cria job ───────────────────────────────────────────────────────────
+    const jobRes  = await fetch('https://api.music.ai/v1/job', {
       method: 'POST', headers: authHeader,
-      body: JSON.stringify({
-        name: 'Tone-ID insight',
-        workflow: chordsWf.slug,
-        params: { inputUrl },
-      }),
+      body: JSON.stringify({ name: 'Tone-ID chord insight', workflow: chordsWf.slug, params: { inputUrl } }),
     });
     const jobData = await jobRes.json();
-    if (!jobRes.ok) {
-      return res.status(jobRes.status).json({ error: JSON.stringify(jobData) });
-    }
+    if (!jobRes.ok) return res.status(jobRes.status).json({ error: JSON.stringify(jobData) });
 
+    // ── 3. Polling ────────────────────────────────────────────────────────────
     let rawResult = null;
     for (let i = 0; i < 60; i++) {
       await new Promise((r) => setTimeout(r, 5000));
       const s  = await fetch(`https://api.music.ai/v1/job/${jobData.id}`, { headers: { Authorization: API_KEY } });
       const sd = await s.json();
       if (sd.status === 'SUCCEEDED') { rawResult = sd.result; break; }
-      if (sd.status === 'FAILED')    return res.status(500).json({ error: `Job falhou: ${JSON.stringify(sd.error)}` });
+      if (sd.status === 'FAILED') return res.status(500).json({ error: `Job falhou: ${JSON.stringify(sd.error)}` });
     }
-    if (!rawResult) return res.status(500).json({ error: 'Timeout.' });
+    if (!rawResult) return res.status(500).json({ error: 'Timeout: job demorou mais de 5 minutos.' });
 
-    // ── 3. Lê array de acordes ────────────────────────────────────────────────
+    // ── 4. Lê array de acordes ────────────────────────────────────────────────
     let chordArray = [];
     if (Array.isArray(rawResult)) {
       chordArray = rawResult;
     } else if (rawResult.chords && typeof rawResult.chords === 'string' && rawResult.chords.startsWith('http')) {
-      chordArray = await fetch(rawResult.chords).then((r) => r.json());
+      const cr = await fetch(rawResult.chords);
+      chordArray = await cr.json();
     } else {
-      for (const k of ['chords','chord','result','data']) {
+      for (const k of ['chords', 'chord', 'result', 'data']) {
         if (Array.isArray(rawResult[k])) { chordArray = rawResult[k]; break; }
       }
     }
 
-    // ── 4. Extrai tonalidade dominante ────────────────────────────────────────
+    // ── 5. Extrai tonalidade mais frequente ───────────────────────────────────
     const CHORD_FIELDS = ['chord_basic_pop','chord_simple_pop','chord_majmin','chord_basic_jazz','chord_basic_nashville'];
     const freq = {};
     for (const seg of chordArray) {
@@ -85,15 +74,15 @@ export default async function handler(req, res) {
       if (chord) freq[chord] = (freq[chord] || 0) + 1;
     }
 
-    const sorted        = Object.entries(freq).sort((a, b) => b[1] - a[1]);
-    const dominantChord = sorted[0]?.[0] || null;
-    const topChords     = sorted.slice(0, 5).map(([c]) => c);
-    const noChord       = sorted.length === 0;
+    const sortedChords  = Object.entries(freq).sort((a, b) => b[1] - a[1]);
+    const dominantChord = sortedChords[0]?.[0] || null;
+    const topChords     = sortedChords.slice(0, 5).map(([c]) => c);
+    const noChord       = sortedChords.length === 0;
 
     let key = null, scale = 'major';
     if (dominantChord) {
-      const m = dominantChord.match(/^([A-G][b#]?)(m(?!aj))?/);
-      if (m) { key = m[1]; scale = m[2] ? 'minor' : 'major'; }
+      const match = dominantChord.match(/^([A-G][b#]?)(m(?!aj))?/);
+      if (match) { key = match[1]; scale = match[2] ? 'minor' : 'major'; }
     }
 
     return res.status(200).json({
@@ -116,17 +105,17 @@ function buildTecnicas(key, scale, noChord) {
   const keyName = key || 'da música';
   if (noChord) {
     return [
-      { nome: 'Envie um áudio com instrumentos', descricao: 'A detecção de acordes funciona melhor com músicas completas (voz + instrumentos). Tente o modo de voz solo para análise apenas vocal.' },
-      { nome: 'Harmonias paralelas em terças',   descricao: 'Mesmo sem detectar a tonalidade, cantar uma terça acima da voz principal é uma técnica segura que funciona na maioria das músicas.' },
-      { nome: 'Dobramento em oitava',             descricao: 'Dobre sua voz exatamente uma oitava acima ou abaixo. Funciona independentemente da tonalidade.' },
+      { nome: 'Envie um áudio com instrumentos', descricao: 'A detecção de acordes funciona melhor com músicas completas (voz + instrumentos). Tente enviar o áudio original com a faixa instrumental.' },
+      { nome: 'Harmonias paralelas em terças', descricao: 'Mesmo sem detectar a tonalidade, você pode cantar um intervalo de terça acima da sua voz principal — é uma técnica segura que funciona na maioria das músicas.' },
+      { nome: 'Dobramento em oitava', descricao: 'Dobre sua voz exatamente uma oitava acima ou abaixo. Funciona independentemente da tonalidade e adiciona profundidade à gravação.' },
     ];
   }
   return [
-    { nome: 'Harmonias paralelas em terças',      descricao: `Cante a mesma melodia uma terça ${isMinor?'menor':'maior'} acima ou abaixo na tonalidade de ${keyName}.` },
-    { nome: `Stacked vocals em ${keyName}`,        descricao: `Grave a mesma linha vocal 3 ou mais vezes. No modo ${isMinor?'menor':'maior'} de ${keyName} cria um efeito encorpado.` },
-    { nome: 'Call and response',                   descricao: `O backing responde às frases da voz principal com linhas curtas em ${keyName}. Ideal para versos.` },
-    { nome: 'Pad vocal',                           descricao: `Sustente a tônica (${keyName}) e a quinta em notas longas para criar um colchão harmônico.` },
-    { nome: 'Dobramento em oitava',                descricao: `Dobre a voz principal uma oitava acima ou abaixo em ${keyName}. Simples e eficaz.` },
+    { nome: 'Harmonias paralelas em terças', descricao: `Cante a mesma melodia um intervalo de terça ${isMinor ? 'menor' : 'maior'} acima ou abaixo na tonalidade de ${keyName}.` },
+    { nome: `Stacked vocals em ${keyName} ${isMinor ? 'menor' : 'maior'}`, descricao: `Grave a mesma linha vocal 3 ou mais vezes e empilhe as faixas para um efeito encorpado.` },
+    { nome: 'Call and response', descricao: `O backing responde às frases da voz principal com linhas curtas e complementares na tonalidade de ${keyName}.` },
+    { nome: 'Pad vocal (notas sustentadas)', descricao: `Sustente a tônica (${keyName}) e a quinta em notas longas e suaves, criando um colchão harmônico.` },
+    { nome: 'Dobramento em oitava', descricao: `Dobre a voz principal exatamente uma oitava acima ou abaixo em ${keyName}.` },
   ];
 }
 
@@ -136,12 +125,12 @@ function noteAt(root, semitones, octave) {
   return CHROMATIC[(( NOTE_IDX[root] ?? 0) + semitones + 12) % 12] + octave;
 }
 function buildMidi(key, scale) {
-  const root  = (key || 'C').replace(/\s.*/,'').trim();
-  const third = scale === 'minor' ? 3 : 4;
-  const sixth = scale === 'minor' ? 8 : 9;
+  const root = (key || 'C').replace(/\s.*/,'').trim();
+  const isMinor = scale === 'minor';
+  const third = isMinor ? 3 : 4, sixth = isMinor ? 8 : 9;
   return {
-    root:    [ noteAt(root,0,4),     noteAt(root,0,5)     ],
-    harmony: [ noteAt(root,third,4), noteAt(root,7,4), noteAt(root,third,5), noteAt(root,7,5) ],
-    color:   [ noteAt(root,sixth,4), noteAt(root,2,5), noteAt(root,11,4)   ],
+    root:    [ noteAt(root, 0, 4),     noteAt(root, 0, 5)     ],
+    harmony: [ noteAt(root, third, 4), noteAt(root, 7, 4), noteAt(root, third, 5), noteAt(root, 7, 5) ],
+    color:   [ noteAt(root, sixth, 4), noteAt(root, 2, 5),  noteAt(root, 11, 4)   ],
   };
 }
