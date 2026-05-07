@@ -409,23 +409,28 @@ async function processInsight() {
   document.getElementById('insightResult').style.display = 'none';
 
   try {
-    // 1. Upload usando o helper existente
+    // 1. Upload
     var downloadUrl = await uploadFile(file, 'Insight');
 
-    // 2. Criar Job com o workflow da Moises/Music.ai
+    // 2. Criar Job - ATENÇÃO: Mudei o workflow para music-ai aqui
     var r = await fetch('/api/job', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         name: 'Tone-ID Insight - ' + file.name,
-        workflow: 'moises/key-bpm-detection', 
+        workflow: 'music-ai/key-bpm-detection', 
         inputUrl: downloadUrl
       })
     });
-    if (!r.ok) throw new Error('Falha ao criar análise.');
+    
+    if (!r.ok) {
+      const errorData = await r.json();
+      throw new Error(errorData.error || 'Falha ao criar análise.');
+    }
+    
     var { id } = await r.json();
 
-    // 3. Polling com barra de progresso
+    // 3. Polling - É AQUI que você adiciona o pollJob que "não existia"
     pollJob(id, 'Insight', function(result) {
       renderInsightData(result);
     });
