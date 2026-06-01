@@ -1,7 +1,8 @@
 // api/vocal-insight.js
-// Insight de voz solo usando Note Mapping do Music AI
-// Lê "pitch tracker with timestamps" (série temporal) como prioridade
-// Parser corrigido para formato piano roll (cols = MIDI 0-127) com \r line endings
+// Usa o "pitch map" do Note Mapping — formato confirmado:
+//   Header:  0,1,2,...,127  (MIDI note como coluna)
+//   Linhas:  activações por nota, uma linha por frame de tempo
+//   Separador de linha: \r (normalizado antes de parsear)
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -15,11 +16,11 @@ export default async function handler(req, res) {
   const auth = { Authorization: API_KEY, 'Content-Type': 'application/json' };
 
   try {
-    // ── 1. Busca workflows ────────────────────────────────────────────────────
-    const wfData    = await (await fetch('https://api.music.ai/v1/workflow?size=100', { headers: { Authorization: API_KEY } })).json();
+    // ── 1. Slug do workflow ───────────────────────────────────────────────────
+    const wfRes     = await fetch('https://api.music.ai/v1/workflow?size=100', { headers: { Authorization: API_KEY } });
+    const wfData    = await wfRes.json();
     const workflows = wfData.workflows || [];
     const noteWf    = workflows.find(w => /note\s*map/i.test(w.name));
-    const cleanupWf = workflows.find(w => /cleanup|vocal.*sep/i.test(w.name));
 
     if (!noteWf) {
       return res.status(404).json({
@@ -28,84 +29,53 @@ export default async function handler(req, res) {
       });
     }
 
-    // ── 2. Cleanup opcional ───────────────────────────────────────────────────
-    let vocalUrl = inputUrl;
-    if (cleanupWf) {
-      try {
-        const cj = await (await fetch('https://api.music.ai/v1/job', {
-          method: 'POST', headers: auth,
-          body: JSON.stringify({ name: 'Tone-ID vocal cleanup', workflow: cleanupWf.slug, params: { inputUrl } }),
-        })).json();
-        if (cj.id) {
-          for (let i = 0; i < 30; i++) {
-            await new Promise(r => setTimeout(r, 5000));
-            const sd = await (await fetch(`https://api.music.ai/v1/job/${cj.id}`, { headers: { Authorization: API_KEY } })).json();
-            if (sd.status === 'SUCCEEDED') { vocalUrl = sd.result?.vocals || sd.result?.voice || inputUrl; break; }
-            if (sd.status === 'FAILED') break;
-          }
-        }
-      } catch (_) { /* continua com áudio original */ }
-    }
-
-    // ── 3. Job de Note Mapping ────────────────────────────────────────────────
-    const njData = await (await fetch('https://api.music.ai/v1/job', {
+    // ── 2. Cria job ───────────────────────────────────────────────────────────
+    const jobRes  = await fetch('https://api.music.ai/v1/job', {
       method: 'POST', headers: auth,
-      body: JSON.stringify({ name: 'Tone-ID note mapping', workflow: noteWf.slug, params: { inputUrl: vocalUrl } }),
-    })).json();
-    if (!njData.id) return res.status(500).json({ error: 'Falha ao criar job.', detail: njData });
+      body: JSON.stringify({ name: 'Tone-ID note mapping', workflow: noteWf.slug, params: { inputUrl } }),
+    });
+    const jobData = await jobRes.json();
+    if (!jobData.id) return res.status(500).json({ error: 'Falha ao criar job.', detail: jobData });
 
-    // ── 4. Polling ────────────────────────────────────────────────────────────
+    // ── 3. Polling ────────────────────────────────────────────────────────────
     let rawResult = null;
     for (let i = 0; i < 60; i++) {
       await new Promise(r => setTimeout(r, 5000));
-      const sd = await (await fetch(`https://api.music.ai/v1/job/${njData.id}`, { headers: { Authorization: API_KEY } })).json();
+      const sd = await (await fetch(`https://api.music.ai/v1/job/${jobData.id}`, { headers: { Authorization: API_KEY } })).json();
       if (sd.status === 'SUCCEEDED') { rawResult = sd.result; break; }
       if (sd.status === 'FAILED') return res.status(500).json({ error: 'Job falhou.', detail: sd.error });
     }
     if (!rawResult) return res.status(500).json({ error: 'Timeout após 5 minutos.' });
 
-    // ── 5. URLs do resultado ──────────────────────────────────────────────────
-    // Prioridade: "pitch tracker with timestamps" (série temporal) > "pitch map" (distribuição)
-    const trackerUrl = rawResult['pitch tracker with timestamps'] || null;
-    const mapUrl     = rawResult['pitch map'] || null;
+    // ── 4. Baixa o CSV ────────────────────────────────────────────────────────
+    // Tenta os dois arquivos disponíveis, na ordem de preferência
+    const urls = [
+      rawResult['pitch tracker with timestamps'],
+      rawResult['pitch map'],
+    ].filter(Boolean);
 
-    if (!trackerUrl && !mapUrl) {
-      return res.status(500).json({
-        error: 'Nenhuma URL de pitch encontrada no resultado.',
-        resultKeys: Object.keys(rawResult),
-      });
+    if (!urls.length) {
+      return res.status(500).json({ error: 'Nenhuma URL de pitch encontrada.', keys: Object.keys(rawResult) });
     }
 
-    // ── 6. Baixa e parseia ────────────────────────────────────────────────────
-    let noteEvents = [];
-
-    // Tenta o tracker temporal primeiro
-    if (trackerUrl) {
+    let csvText = null;
+    for (const url of urls) {
       try {
-        const text = await (await fetch(trackerUrl)).text();
-        noteEvents  = parsePianoRollCSV(text);
-      } catch (e) {
-        console.error('Falha ao ler tracker:', e.message);
-      }
+        const r = await fetch(url);
+        if (r.ok) { csvText = await r.text(); break; }
+      } catch (_) {}
     }
 
-    // Fallback: pitch map (distribuição geral, sem tempo real)
-    if (!noteEvents.length && mapUrl) {
-      try {
-        const text = await (await fetch(mapUrl)).text();
-        noteEvents  = parsePianoRollCSV(text);
-      } catch (e) {
-        console.error('Falha ao ler pitch map:', e.message);
-      }
-    }
+    if (!csvText) return res.status(500).json({ error: 'Falha ao baixar CSV.' });
 
-    const analysis = analyzeNotes(noteEvents);
+    // ── 5. Parseia ────────────────────────────────────────────────────────────
+    const noteEvents = parsePianoRoll(csvText);
+    const analysis   = analyzeNotes(noteEvents);
 
     return res.status(200).json({
-      workflowUsed:  noteWf.name,
-      cleanupUsed:   !!cleanupWf && vocalUrl !== inputUrl,
-      parsedEvents:  noteEvents.length,
-      noteEvents:    noteEvents.slice(0, 3000),
+      workflowUsed: noteWf.name,
+      parsedEvents: noteEvents.length,
+      noteEvents:   noteEvents.slice(0, 4000),
       ...analysis,
     });
 
@@ -114,131 +84,112 @@ export default async function handler(req, res) {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// PARSER DE PIANO ROLL CSV
-// ═══════════════════════════════════════════════════════════════════════════════
+// ── Parser piano roll ─────────────────────────────────────────────────────────
+// Formato confirmado do Music AI:
+//   Header:  0,1,2,...,127       (índices MIDI como nomes de coluna)
+//   Dados:   <act_0>,<act_1>,...  (probabilidade 0-1 por nota, por frame)
+//   Variante com tempo: time,0,1,...,127
 //
-// Formato retornado pelo Music AI Note Mapping:
-//   Header:  0,1,2,...,127         (índices MIDI como colunas)
-//   Linhas:  <prob0>,<prob1>,...   (probabilidade de ativação por nota MIDI)
-//
-//   Variante com timestamp:
-//   Header:  time,0,1,2,...,127
-//   Linhas:  <t>,<prob0>,...
-//
-// Line endings podem ser \r\n, \r ou \n — todos normalizados.
+// Frame rate padrão: 100 fps (0.01s por frame)
 
-const CHROMATIC = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
-const FRAME_DT  = 0.01;   // segundos por frame (100fps — padrão Music AI)
-const MIN_CONF  = 0.15;   // ativação mínima para considerar nota ativa
-const MIDI_MIN  = 36;     // C2 — limite inferior da voz humana
-const MIDI_MAX  = 96;     // C7 — limite superior (soprano agudo)
+const CHROMATIC  = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const FRAME_RATE = 0.01;
+const MIN_ACT    = 0.05;  // limiar mínimo de ativação (baixo para não perder nada)
+const MIDI_LO    = 36;    // C2
+const MIDI_HI    = 96;    // C7
 
-function midiToHz(midi)   { return 440 * Math.pow(2, (midi - 69) / 12); }
-function midiToName(midi) {
-  if (midi < 0 || midi > 127) return null;
-  return CHROMATIC[((midi % 12) + 12) % 12] + (Math.floor(midi / 12) - 1);
-}
+function midiToHz(m)   { return +(440 * Math.pow(2, (m - 69) / 12)).toFixed(2); }
+function midiToName(m) { return m>=0&&m<=127 ? CHROMATIC[((m%12)+12)%12]+(Math.floor(m/12)-1) : null; }
 
-function parsePianoRollCSV(text) {
-  // Normaliza todos os tipos de quebra de linha
-  const lines = text
+function parsePianoRoll(raw) {
+  // Normaliza TODOS os tipos de quebra de linha antes de qualquer split
+  const lines = raw
     .replace(/\r\n/g, '\n')
-    .replace(/\r/g, '\n')
+    .replace(/\r/g,   '\n')
     .trim()
     .split('\n')
     .filter(l => l.trim());
 
   if (lines.length < 2) return [];
 
-  const header = lines[0].split(',').map(s => s.trim());
+  const headerCols = lines[0].split(',').map(s => s.trim());
 
-  // Detecta se a primeira coluna é timestamp (não-numérico ou texto "time")
-  const firstIsTime = isNaN(parseInt(header[0])) || header[0].toLowerCase().includes('time');
-  const midiStart   = firstIsTime ? 1 : 0;
+  // Detecta se há coluna de tempo na primeira posição
+  const hasTime    = isNaN(parseInt(headerCols[0]));
+  const dataOffset = hasTime ? 1 : 0;
+  const midiCols   = headerCols.slice(dataOffset).map(h => parseInt(h));
 
-  // Extrai os índices MIDI das colunas
-  const midiCols = header.slice(midiStart).map(h => parseInt(h));
-  if (midiCols.some(isNaN) || midiCols.length === 0) {
-    // Não é formato piano roll — tenta parser convencional
-    return parseConventionalCSV(lines);
+  // Se o header não é piano roll (MIDI 0-127), tenta formato convencional
+  if (midiCols.length === 0 || midiCols.some(isNaN)) {
+    return parseFallback(lines);
   }
 
   const events = [];
   for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i].split(',').map(s => parseFloat(s.trim()));
-    const time = firstIsTime ? cols[0] : (i - 1) * FRAME_DT;
+    const vals = lines[i].split(',').map(s => parseFloat(s) || 0);
+    const time  = hasTime ? vals[0] : (i - 1) * FRAME_RATE;
 
-    if (isNaN(time)) continue;
-
-    // Encontra a nota MIDI com maior ativação neste frame (dentro do range vocal)
-    let bestMidi = -1, bestConf = MIN_CONF - 0.001;
+    // Nota com maior ativação dentro do range vocal
+    let bestMidi = -1, bestAct = MIN_ACT;
     for (let j = 0; j < midiCols.length; j++) {
       const midi = midiCols[j];
-      const conf = cols[j + midiStart] || 0;
-      if (midi >= MIDI_MIN && midi <= MIDI_MAX && conf > bestConf) {
+      const act  = vals[j + dataOffset] || 0;
+      if (midi >= MIDI_LO && midi <= MIDI_HI && act > bestAct) {
         bestMidi = midi;
-        bestConf = conf;
+        bestAct  = act;
       }
     }
 
     if (bestMidi >= 0) {
-      events.push({
-        time: +time.toFixed(3),
-        hz:   +midiToHz(bestMidi).toFixed(2),
-        note: midiToName(bestMidi),
-        midi: bestMidi,
-      });
+      events.push({ time: +time.toFixed(3), hz: midiToHz(bestMidi), note: midiToName(bestMidi), midi: bestMidi });
     }
   }
   return events;
 }
 
-// Parser de fallback para formato convencional (time, frequency, confidence)
-function parseConventionalCSV(lines) {
-  const header = lines[0].toLowerCase().split(',').map(s => s.trim());
-  const ti = header.findIndex(h => h.includes('time') || h === 't');
-  const fi = header.findIndex(h => h.includes('freq') || h === 'hz' || h === 'f0' || h.includes('pitch'));
-  const ci = header.findIndex(h => h.includes('conf') || h.includes('prob'));
-
+// Fallback para formato time,frequency,confidence
+function parseFallback(lines) {
+  const h  = lines[0].toLowerCase().split(',').map(s => s.trim());
+  const ti = h.findIndex(c => c.includes('time') || c === 't');
+  const fi = h.findIndex(c => ['freq','hz','f0','pitch','frequency','midi'].some(k => c.includes(k)));
+  const ci = h.findIndex(c => c.includes('conf') || c.includes('prob'));
   const events = [];
   for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i].split(',').map(s => s.trim());
-    const time = ti >= 0 ? parseFloat(cols[ti]) : (i - 1) * FRAME_DT;
-    const hz   = fi >= 0 ? parseFloat(cols[fi]) : 0;
-    const conf = ci >= 0 ? parseFloat(cols[ci]) : 1;
-    if (hz > 40 && hz < 4200 && conf >= MIN_CONF) {
+    const c    = lines[i].split(',');
+    const time = ti >= 0 ? parseFloat(c[ti]) : (i - 1) * FRAME_RATE;
+    let   hz   = fi >= 0 ? parseFloat(c[fi]) : 0;
+    // Se a coluna for 'midi', converte para Hz
+    if (h[fi] === 'midi' || h[fi] === 'midi_pitch') hz = hz > 0 ? midiToHz(Math.round(hz)) : 0;
+    const conf = ci >= 0 ? parseFloat(c[ci]) : 1;
+    if (hz > 40 && hz < 4200 && conf >= MIN_ACT) {
       const midi = Math.round(12 * Math.log2(hz / 440) + 69);
-      events.push({ time: +time.toFixed(3), hz: +hz.toFixed(2), note: midiToName(midi), midi });
+      events.push({ time: +time.toFixed(3), hz, note: midiToName(midi), midi });
     }
   }
   return events;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// ANÁLISE DAS NOTAS
-// ═══════════════════════════════════════════════════════════════════════════════
+// ── Análise ───────────────────────────────────────────────────────────────────
 const NOTE_IDX = Object.fromEntries(CHROMATIC.map((n, i) => [n, i]));
 
-function noteAt(root, semitones, octave) {
-  const base = NOTE_IDX[root] ?? 0;
-  const total = base + semitones;
-  return CHROMATIC[((total % 12) + 12) % 12] + (octave + Math.floor(total / 12));
+function noteAt(root, sem, oct) {
+  const t = (NOTE_IDX[root] ?? 0) + sem;
+  return CHROMATIC[((t % 12) + 12) % 12] + (oct + Math.floor(t / 12));
 }
-function midiOf(root, semitones, octave) {
-  const base = NOTE_IDX[root] ?? 0;
-  const total = base + semitones;
-  return (octave + Math.floor(total / 12) + 1) * 12 + ((total % 12) + 12) % 12;
+function midiOf(root, sem, oct) {
+  const t = (NOTE_IDX[root] ?? 0) + sem;
+  return (oct + Math.floor(t / 12) + 1) * 12 + ((t % 12) + 12) % 12;
 }
-function bestNote(root, semitones) {
-  const candidates = [];
-  for (let oct = 2; oct <= 6; oct++) {
-    const midi = midiOf(root, semitones, oct);
-    if (midi >= 48 && midi <= 84) candidates.push({ name: noteAt(root, semitones, oct), midi });
+function bestNote(root, sem) {
+  let best = null, bestDist = Infinity;
+  for (let o = 2; o <= 6; o++) {
+    const m = midiOf(root, sem, o);
+    if (m >= 48 && m <= 84) {
+      const d = Math.abs(m - 64);
+      if (d < bestDist) { bestDist = d; best = noteAt(root, sem, o); }
+    }
   }
-  if (!candidates.length) return noteAt(root, semitones, 4);
-  candidates.sort((a, b) => Math.abs(a.midi - 64) - Math.abs(b.midi - 64));
-  return candidates[0].name;
+  return best || noteAt(root, sem, 4);
 }
 
 function analyzeNotes(events) {
@@ -247,37 +198,39 @@ function analyzeNotes(events) {
   if (!valid.length) {
     return {
       range: null, centerNote: null, lowestNote: null, highestNote: null, semitones: 0,
-      tecnicas: [{ nome: 'Nenhuma nota detectada', descricao: 'Verifique se o arquivo contém voz clara e tente novamente.' }],
-      midi: { root: ['C4','C5'], harmony: ['E4','G4','E5','G5'], color: ['A4','D5','B4'] },
+      tecnicas: [{ nome: 'Nenhuma nota detectada', descricao: 'Tente enviar um arquivo com voz clara gravada sem muito ruído de fundo.' }],
+      midi: { root:['C4','C5'], harmony:['E4','G4','E5'], color:['A4','D5'] },
     };
   }
 
   const midis   = valid.map(e => e.midi);
   const lo      = Math.min(...midis), hi = Math.max(...midis);
   const center  = Math.round(midis.reduce((a, b) => a + b, 0) / midis.length);
-  const toName  = m => CHROMATIC[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1);
+  const toName  = m => CHROMATIC[((m%12)+12)%12] + (Math.floor(m/12)-1);
   const loNote  = toName(lo), hiNote = toName(hi), cNote = toName(center);
   const semi    = hi - lo;
-
-  const rootMatch = cNote.match(/^([A-G][#]?)/);
-  const root      = rootMatch ? rootMatch[1] : 'C';
-  const isMinor   = center < 60;
-  const third     = isMinor ? 3 : 4;
-  const sixth     = isMinor ? 8 : 9;
+  const rm      = cNote.match(/^([A-G][#]?)/);
+  const root    = rm ? rm[1] : 'C';
+  const isMinor = center < 60;
+  const third   = isMinor ? 3 : 4;
+  const sixth   = isMinor ? 8 : 9;
 
   return {
     lowestNote: loNote, highestNote: hiNote, centerNote: cNote,
-    semitones:  semi,   range: `${loNote} — ${hiNote}`,
+    semitones: semi, range: `${loNote} — ${hiNote}`,
     tecnicas: [
       { nome: 'Harmonia em terça acima',  descricao: `Sua voz ficou centrada em torno de ${cNote}. Cante uma terça ${isMinor?'menor':'maior'} acima para o backing mais natural.` },
-      { nome: 'Harmonia em terça abaixo', descricao: `Tente uma terça abaixo de ${cNote}. Com extensão de ${loNote} a ${hiNote} há espaço para harmonias graves encorpadas.` },
-      { nome: semi >= 12 ? 'Dobramento em oitava' : 'Stacked vocals', descricao: semi >= 12 ? `Extensão de ${semi} semitons — experimente dobrar partes graves uma oitava acima para adicionar brilho.` : `Grave 3 camadas próximas de ${cNote} com leve detuning (±10 cents) para um coral encorpado.` },
-      { nome: 'Pad vocal sustentado', descricao: `Segure ${bestNote(root, 0)} com vibrato suave. Grave com intensidade baixa para criar um colchão sem sobrepor a voz principal.` },
+      { nome: 'Harmonia em terça abaixo', descricao: `Tente uma terça abaixo de ${cNote}. Com extensão de ${loNote} a ${hiNote} há espaço para harmonias graves.` },
+      { nome: semi >= 12 ? 'Dobramento em oitava' : 'Stacked vocals na região central',
+        descricao: semi >= 12
+          ? `Extensão de ${semi} semitons — experimente dobrar as partes graves uma oitava acima para adicionar brilho.`
+          : `Grave 3 camadas próximas de ${cNote} com leve detuning (±10 cents) para um coral encorpado.` },
+      { nome: 'Pad vocal sustentado', descricao: `Segure ${bestNote(root,0)} com vibrato suave no final. Grave com intensidade baixa para não sobrepor a voz principal.` },
     ],
     midi: {
-      root:    [bestNote(root, 0),     noteAt(root, 0,     isMinor ? 3 : 4)].filter((v, i, a) => a.indexOf(v) === i),
-      harmony: [bestNote(root, third), bestNote(root, 7)],
-      color:   [bestNote(root, sixth), bestNote(root, 2)],
+      root:    [bestNote(root,0),     noteAt(root,0,   parseInt(bestNote(root,0).slice(-1))+1)].filter((v,i,a)=>a.indexOf(v)===i),
+      harmony: [bestNote(root,third), bestNote(root,7)],
+      color:   [bestNote(root,sixth), bestNote(root,2)],
     },
   };
 }
