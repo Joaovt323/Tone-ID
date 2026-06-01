@@ -20,8 +20,7 @@
 
     nav{display:flex;align-items:center;margin-bottom:2.5rem;border-bottom:1px solid var(--border)}
     nav a{text-decoration:none;color:var(--muted);font-size:13px;padding:8px 18px;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s,border-color .15s}
-    nav a:hover{color:var(--text)}
-    nav a.active{color:var(--teal);border-bottom-color:var(--teal)}
+    nav a:hover{color:var(--text)} nav a.active{color:var(--teal);border-bottom-color:var(--teal)}
     nav .brand{font-family:'DM Mono',monospace;font-size:1rem;font-weight:500;color:var(--text);padding:8px 18px 8px 0;margin-right:12px;border-right:1px solid var(--border2);border-bottom:2px solid transparent;margin-bottom:-1px}
 
     .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem 1.4rem;margin-bottom:12px}
@@ -37,14 +36,11 @@
     .upload-zone{border:1.5px dashed var(--border2);border-radius:var(--radius-lg);padding:2rem 1.5rem;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;margin-bottom:14px;position:relative}
     .upload-zone:hover,.upload-zone.dragover{border-color:var(--teal);background:rgba(62,207,170,.04)}
     .upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-    .upload-icon{font-size:1.8rem;margin-bottom:6px}
-    .upload-title{font-size:14px;font-weight:500;margin-bottom:3px}
-    .upload-sub{font-size:12px;color:var(--muted)}
-    .file-selected{font-family:'DM Mono',monospace;font-size:12px;color:var(--teal);margin-top:6px}
+    .upload-icon{font-size:1.8rem;margin-bottom:6px} .upload-title{font-size:14px;font-weight:500;margin-bottom:3px}
+    .upload-sub{font-size:12px;color:var(--muted)} .file-selected{font-family:'DM Mono',monospace;font-size:12px;color:var(--teal);margin-top:6px}
 
     button{cursor:pointer;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 18px;transition:background .15s,opacity .15s}
-    button:hover:not(:disabled){background:#252d3a}
-    button:disabled{opacity:.38;cursor:not-allowed}
+    button:hover:not(:disabled){background:#252d3a} button:disabled{opacity:.38;cursor:not-allowed}
     button.primary{background:var(--teal);border-color:var(--teal);color:#0d1117;font-weight:500}
     button.primary:hover:not(:disabled){background:#30b896}
     button.primary-blue{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:500}
@@ -64,14 +60,12 @@
     .stem-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
     .stem-controls{display:flex;align-items:center;gap:8px}
     .btn-play{width:32px;height:32px;border-radius:50%;border:1px solid var(--border2);background:transparent;display:flex;align-items:center;justify-content:center;font-size:12px;padding:0;flex-shrink:0}
-    .btn-play:hover{background:var(--surface)}
-    .btn-play.playing{border-color:var(--teal);color:var(--teal)}
-    .vol-slider{width:70px;accent-color:var(--teal)}
-    audio{display:none}
+    .btn-play:hover{background:var(--surface)} .btn-play.playing{border-color:var(--teal);color:var(--teal)}
+    .vol-slider{width:70px;accent-color:var(--teal)} audio{display:none}
     .download-link{font-size:11px;color:var(--blue);text-decoration:none}
     .download-link:hover{text-decoration:underline}
 
-    /* ── PLAYER SINCRONIZADO ── */
+    /* player sincronizado */
     .sync-player{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:12px}
     .sync-player audio{display:none}
     .player-row{display:flex;align-items:center;gap:10px}
@@ -80,24 +74,21 @@
     .player-time{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);white-space:nowrap;min-width:80px}
     .player-seek{flex:1;accent-color:var(--teal);height:4px;cursor:pointer}
 
-    /* ── TIMELINE DE ACORDES ── */
+    /* timeline de acordes */
     .chord-timeline-wrap{position:relative;height:48px;margin-bottom:12px;border-radius:var(--radius);overflow:hidden;background:var(--surface2);border:1px solid var(--border)}
-    .chord-timeline-inner{display:flex;height:100%;width:100%;position:relative}
-    .chord-seg{position:absolute;top:0;height:100%;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:11px;font-weight:500;cursor:pointer;transition:opacity .15s;border-right:1px solid rgba(0,0,0,.3);overflow:hidden;white-space:nowrap;padding:0 4px}
-    .chord-seg:hover{opacity:.85}
-    .chord-seg.active-seg{outline:2px solid #fff;outline-offset:-2px;z-index:2}
+    .chord-seg{position:absolute;top:0;height:100%;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:11px;font-weight:500;cursor:pointer;border-right:1px solid rgba(0,0,0,.3);overflow:hidden;white-space:nowrap;padding:0 4px;transition:opacity .15s}
+    .chord-seg:hover{opacity:.85} .chord-seg.active-seg{outline:2px solid #fff;outline-offset:-2px;z-index:2}
     .timeline-cursor{position:absolute;top:0;width:2px;background:rgba(255,255,255,.9);height:100%;pointer-events:none;z-index:3;transition:left .1s linear}
     .timeline-no-chord{background:rgba(255,255,255,.04);color:var(--muted)}
 
-    /* ── PAINEL DE INSIGHT DINÂMICO ── */
+    /* painel live (acordes e voz) */
     .insight-live{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
     @media(max-width:620px){.insight-live{grid-template-columns:1fr}}
-
-    .chord-now{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;text-align:center}
-    .chord-now-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
-    .chord-now-name{font-family:'DM Mono',monospace;font-size:2.2rem;font-weight:500;line-height:1;color:var(--teal)}
-    .chord-now-complex{font-size:12px;color:var(--muted);margin-top:4px}
-    .chord-now-bass{font-size:11px;color:var(--amber);margin-top:2px}
+    .chord-now,.note-now{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;text-align:center}
+    .live-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+    .live-name{font-family:'DM Mono',monospace;font-size:2.2rem;font-weight:500;line-height:1;color:var(--teal)}
+    .live-sub{font-size:12px;color:var(--muted);margin-top:4px}
+    .live-accent{font-size:11px;color:var(--amber);margin-top:2px}
 
     .midi-live{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem}
     .midi-live-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
@@ -108,19 +99,20 @@
     .midi-note.root{background:rgba(62,207,170,.12);border-color:var(--teal);color:var(--teal)}
     .midi-note.harmony{background:rgba(91,156,246,.1);border-color:var(--blue);color:var(--blue)}
     .midi-note.color{background:rgba(167,139,250,.1);border-color:var(--purple);color:var(--purple)}
+    .midi-note.active-note{background:rgba(224,153,64,.15);border-color:var(--amber);color:var(--amber)}
 
     .tips-panel{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:12px}
     .tips-panel-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
     .tip-item{font-size:12px;color:var(--muted);line-height:1.6;padding:6px 0;border-bottom:1px solid var(--border)}
     .tip-item:last-child{border-bottom:none}
 
-    /* ── GRÁFICO TIMELINE VOCAL ── */
+    /* gráfico */
     .chart-wrap{position:relative;width:100%;height:180px}
     .chart-cursor-label{position:absolute;top:6px;right:10px;font-family:'DM Mono',monospace;font-size:11px;color:var(--teal);pointer-events:none}
 
     /* range badges */
     .range-badges{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
-    .range-badge{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:8px 14px;text-align:center}
+    .range-badge{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:8px 14px;text-align:center;min-width:72px}
     .range-badge-val{font-family:'DM Mono',monospace;font-size:1.2rem;font-weight:500;color:var(--text)}
     .range-badge-lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
 
@@ -132,9 +124,6 @@
     .empty-state{text-align:center;padding:2rem;color:var(--muted);font-size:13px}
     .empty-state .icon{font-size:2rem;margin-bottom:8px;display:block;opacity:.4}
     .error-msg{background:rgba(232,97,74,.1);border:1px solid rgba(232,97,74,.3);border-radius:var(--radius);padding:10px 14px;font-size:13px;color:var(--coral);margin-top:10px;display:none}
-    .insight-loading{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
-    .spinner{width:16px;height:16px;border:2px solid var(--border2);border-top-color:var(--teal);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0}
-    @keyframes spin{to{transform:rotate(360deg)}}
   </style>
 </head>
 <body>
@@ -191,7 +180,7 @@
     <div id="insight-full">
       <div class="card">
         <div class="card-title">Análise com música completa</div>
-        <div class="card-desc">Faça upload de uma música com voz <strong>e</strong> instrumentos. A IA detecta os acordes compasso a compasso e o painel abaixo atualiza em tempo real conforme você ouve.</div>
+        <div class="card-desc">Faça upload de uma música com voz <strong>e</strong> instrumentos. A IA detecta os acordes compasso a compasso e o painel atualiza em tempo real conforme você ouve.</div>
       </div>
       <div class="upload-zone" id="uploadZoneFull" ondragover="onDragOver(event,'full')" ondragleave="onDragLeave('full')" ondrop="onDrop(event,'full')">
         <input type="file" accept="audio/*" id="fileFull" onchange="onFileChange('full')">
@@ -210,10 +199,7 @@
         <div class="progress-label" id="progressLabelFull">Enviando arquivo...</div>
       </div>
 
-      <!-- resultado música completa -->
       <div id="fullResult" style="display:none;margin-top:16px">
-
-        <!-- player sincronizado -->
         <div class="card">
           <div class="sec-label" style="margin-bottom:10px">Player</div>
           <div class="sync-player">
@@ -224,8 +210,6 @@
               <input type="range" class="player-seek" id="fullSeek" value="0" min="0" step="0.1" oninput="seekTo(this.value)">
             </div>
           </div>
-
-          <!-- timeline de acordes -->
           <div class="sec-label" style="margin-top:14px;margin-bottom:6px">Acordes detectados</div>
           <div class="chord-timeline-wrap">
             <div class="chord-timeline-inner" id="chordTimeline"></div>
@@ -233,28 +217,22 @@
           </div>
         </div>
 
-        <!-- painel dinâmico -->
         <div class="insight-live">
-          <!-- acorde atual -->
           <div class="chord-now">
-            <div class="chord-now-label">Acorde atual</div>
-            <div class="chord-now-name" id="chordNowName">—</div>
-            <div class="chord-now-complex" id="chordNowComplex"></div>
-            <div class="chord-now-bass" id="chordNowBass"></div>
+            <div class="live-label">Acorde atual</div>
+            <div class="live-name" id="chordNowName">—</div>
+            <div class="live-sub" id="chordNowComplex"></div>
+            <div class="live-accent" id="chordNowBass"></div>
           </div>
-          <!-- notas MIDI ao vivo -->
           <div class="midi-live">
             <div class="midi-live-label">Notas MIDI sugeridas</div>
             <div id="midiLivePanel"><span style="font-size:12px;color:var(--muted)">Dê play para ver as sugestões</span></div>
           </div>
         </div>
-
-        <!-- dicas contextuais -->
         <div class="tips-panel">
           <div class="tips-panel-label">Dicas para este acorde</div>
-          <div id="tipsPanel"><span style="font-size:12px;color:var(--muted)">As dicas vão aparecer conforme a música toca</span></div>
+          <div id="tipsPanel"><span style="font-size:12px;color:var(--muted)">As dicas aparecem conforme a música toca</span></div>
         </div>
-
       </div>
     </div>
 
@@ -262,7 +240,7 @@
     <div id="insight-vocal" style="display:none">
       <div class="card">
         <div class="card-title">Análise de voz solo</div>
-        <div class="card-desc">Faça upload de uma gravação só com sua voz. A IA mapeia cada nota cantada e o gráfico abaixo mostra as frequências sincronizadas com o player.</div>
+        <div class="card-desc">Faça upload de uma gravação só com sua voz. A IA mapeia cada nota cantada e o painel abaixo atualiza em tempo real conforme você ouve, mostrando harmonias sugeridas para cada nota.</div>
       </div>
       <div class="upload-zone" id="uploadZoneVocal" ondragover="onDragOver(event,'vocal')" ondragleave="onDragLeave('vocal')" ondrop="onDrop(event,'vocal')">
         <input type="file" accept="audio/*" id="fileVocal" onchange="onFileChange('vocal')">
@@ -281,10 +259,9 @@
         <div class="progress-label" id="progressLabelVocal">Enviando arquivo...</div>
       </div>
 
-      <!-- resultado voz solo -->
       <div id="vocalResult" style="display:none;margin-top:16px">
 
-        <!-- player voz -->
+        <!-- player + gráfico sincronizado -->
         <div class="card">
           <div class="sec-label" style="margin-bottom:10px">Player</div>
           <div class="sync-player">
@@ -295,18 +272,35 @@
               <input type="range" class="player-seek" id="vocalSeek" value="0" min="0" step="0.01" oninput="seekVocalTo(this.value)">
             </div>
           </div>
-
-          <!-- gráfico de notas sincronizado -->
           <div class="sec-label" style="margin-top:14px;margin-bottom:6px">Notas detectadas ao longo do tempo</div>
-          <div class="chart-wrap" style="position:relative">
+          <div class="chart-wrap">
             <canvas id="noteChart" role="img" aria-label="Notas detectadas ao longo do tempo"></canvas>
             <div class="chart-cursor-label" id="noteAtCursor"></div>
           </div>
         </div>
 
-        <!-- análise -->
+        <!-- painel live — igual ao de acordes mas para voz -->
+        <div class="insight-live">
+          <div class="note-now">
+            <div class="live-label">Nota atual</div>
+            <div class="live-name" id="noteNowName">—</div>
+            <div class="live-sub" id="noteNowHz"></div>
+          </div>
+          <div class="midi-live">
+            <div class="midi-live-label">Harmonias sugeridas</div>
+            <div id="noteHarmoniesPanel"><span style="font-size:12px;color:var(--muted)">Dê play para ver as harmonias</span></div>
+          </div>
+        </div>
+
+        <!-- dica contextual por nota -->
+        <div class="tips-panel">
+          <div class="tips-panel-label">Dica para esta nota</div>
+          <div id="noteTipPanel"><span style="font-size:12px;color:var(--muted)">As dicas aparecem conforme a voz toca</span></div>
+        </div>
+
+        <!-- análise geral (estática) -->
         <div class="card">
-          <div class="sec-label" style="margin-bottom:12px">Análise vocal</div>
+          <div class="sec-label" style="margin-bottom:12px">Análise geral da voz</div>
           <div id="vocalInsightContent">
             <div class="empty-state"><span class="icon">🎤</span>A análise vai aparecer aqui.</div>
           </div>
@@ -321,33 +315,62 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 // UTILITÁRIOS
 // ═══════════════════════════════════════════════════════════════════════════════
-function switchMode(mode) {
+const CHROMATIC = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const NOTE_IDX  = Object.fromEntries(CHROMATIC.map((n,i)=>[n,i]));
+
+function switchMode(mode){
   document.getElementById('mode-stems').style.display   = mode==='stems'   ? '' : 'none';
   document.getElementById('mode-insight').style.display = mode==='insight' ? '' : 'none';
   document.getElementById('tab-stems').classList.toggle('active',   mode==='stems');
   document.getElementById('tab-insight').classList.toggle('active', mode==='insight');
 }
-function switchInsight(sub) {
+function switchInsight(sub){
   document.getElementById('insight-full').style.display  = sub==='full'  ? '' : 'none';
   document.getElementById('insight-vocal').style.display = sub==='vocal' ? '' : 'none';
   document.getElementById('itab-full').classList.toggle('active',  sub==='full');
   document.getElementById('itab-vocal').classList.toggle('active', sub==='vocal');
 }
-function cap(s) { return s.charAt(0).toUpperCase()+s.slice(1); }
+function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
 function showError(id,msg){ var el=document.getElementById(id); el.textContent=msg; el.style.display='block'; }
 function hideError(id){ document.getElementById(id).style.display='none'; }
-function setProgress(p,pct,label){
+function setProgress(p,pct,lbl){
   document.getElementById('progress'+p).style.display='block';
   document.getElementById('progressBar'+p).style.width=pct+'%';
-  document.getElementById('progressLabel'+p).textContent=label;
+  document.getElementById('progressLabel'+p).textContent=lbl;
 }
 function hideProgress(p){ document.getElementById('progress'+p).style.display='none'; }
 function fmtTime(s){ var m=Math.floor(s/60); return m+':'+(Math.floor(s%60)+'').padStart(2,'0'); }
+
+function noteAt(root,semitones,octave){
+  var base=NOTE_IDX[root]??0, total=base+semitones;
+  return CHROMATIC[((total%12)+12)%12]+(octave+Math.floor(total/12));
+}
+function midiOf(root,semitones,octave){
+  var base=NOTE_IDX[root]??0, total=base+semitones;
+  return (octave+Math.floor(total/12)+1)*12+((total%12)+12)%12;
+}
+function midiToName(midi){
+  if(midi<0||midi>127) return null;
+  return CHROMATIC[((midi%12)+12)%12]+(Math.floor(midi/12)-1);
+}
+function midiToHz(midi){ return +(440*Math.pow(2,(midi-69)/12)).toFixed(1); }
+
+function bestNote(root,semitones){
+  var candidates=[];
+  for(var oct=2;oct<=6;oct++){
+    var midi=midiOf(root,semitones,oct);
+    if(midi>=48&&midi<=84) candidates.push({name:noteAt(root,semitones,oct),midi,dist:Math.abs(midi-64)});
+  }
+  if(!candidates.length) return noteAt(root,semitones,4);
+  candidates.sort(function(a,b){return a.dist-b.dist;});
+  return candidates[0].name;
+}
 
 // ── drag & drop ───────────────────────────────────────────────────────────────
 function onDragOver(e,mode){ e.preventDefault(); document.getElementById('uploadZone'+cap(mode)).classList.add('dragover'); }
 function onDragLeave(mode) { document.getElementById('uploadZone'+cap(mode)).classList.remove('dragover'); }
 function onDrop(e,mode)    { e.preventDefault(); onDragLeave(mode); var f=e.dataTransfer.files[0]; if(f) assignFile(mode,f); }
+
 var selectedFiles={stems:null,full:null,vocal:null};
 function onFileChange(mode){ var f=document.getElementById('file'+cap(mode)).files[0]; if(f) assignFile(mode,f); }
 function assignFile(mode,file){
@@ -357,7 +380,6 @@ function assignFile(mode,file){
   document.getElementById(btn).disabled=false;
 }
 
-// ── upload ────────────────────────────────────────────────────────────────────
 async function uploadFile(file,prefix){
   setProgress(prefix,10,'Solicitando URL de upload...');
   var r1=await fetch('/api/upload'); if(!r1.ok) throw new Error('Falha ao obter URL de upload.');
@@ -368,8 +390,6 @@ async function uploadFile(file,prefix){
   setProgress(prefix,50,'Arquivo enviado...');
   return downloadUrl;
 }
-
-// ── polling ───────────────────────────────────────────────────────────────────
 function pollJob(jobId,prefix,onDone){
   var attempts=0;
   var iv=setInterval(async function(){
@@ -417,14 +437,16 @@ function resetStems(){
   selectedFiles.stems=null; document.getElementById('fileStemsName').textContent='';
   document.getElementById('fileStems').value=''; document.getElementById('btnProcessStems').disabled=true;
   document.getElementById('btnResetStems').style.display='none';
-  document.getElementById('stemsResult').style.display='none';
-  document.getElementById('stemsGrid').innerHTML=''; hideError('errorStems');
+  document.getElementById('stemsResult').style.display='none'; document.getElementById('stemsGrid').innerHTML='';
+  hideError('errorStems');
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// INSIGHT — MÚSICA COMPLETA (com timeline sincronizada)
+// INSIGHT — MÚSICA COMPLETA
 // ═══════════════════════════════════════════════════════════════════════════════
-var fullSegments=[], fullDuration=0, fullAudioSrc='', rafFull=null;
+var fullSegments=[], fullDuration=0, lastSegIdx=-1;
+var CHORD_COLORS={'C':'#3ecfaa','C#':'#30b896','D':'#5b9cf6','D#':'#4a8be0','E':'#a78bfa','F':'#e09940','F#':'#d4892e','G':'#e8614a','G#':'#d44f38','A':'#f472b6','A#':'#e05ea8','B':'#8b5cf6'};
+function hexToRgb(h){ return parseInt(h.slice(1,3),16)+','+parseInt(h.slice(3,5),16)+','+parseInt(h.slice(5,7),16); }
 
 async function processFull(){
   var file=selectedFiles.full; if(!file) return;
@@ -432,105 +454,74 @@ async function processFull(){
   document.getElementById('fullResult').style.display='none';
   try{
     var url=await uploadFile(file,'Full');
-    fullAudioSrc=url;
     setProgress('Full',55,'Detectando acordes compasso a compasso...');
     var r=await fetch('/api/insight',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({inputUrl:url})});
     if(!r.ok){ var e=await r.json(); throw new Error(e.error||'Erro no servidor'); }
     var data=await r.json();
     hideProgress('Full');
-    renderFullResult(data, file);
+    renderFullResult(data,file);
   }catch(e){ hideProgress('Full'); showError('errorFull',e.message); document.getElementById('btnProcessFull').disabled=false; }
 }
 
-function renderFullResult(data, file){
+function renderFullResult(data,file){
   fullSegments=data.segments||[];
-
-  // configura player com o arquivo local (mais rápido que URL remota)
   var audio=document.getElementById('fullAudio');
   audio.src=URL.createObjectURL(file);
   audio.onloadedmetadata=function(){
     fullDuration=audio.duration;
     document.getElementById('fullSeek').max=fullDuration;
     document.getElementById('fullTimeDisplay').textContent=fmtTime(0)+' / '+fmtTime(fullDuration);
-    buildChordTimeline(fullSegments, fullDuration);
+    buildChordTimeline(fullSegments,fullDuration);
   };
-  audio.ontimeupdate=function(){ onFullTimeUpdate(); };
-  audio.onended=function(){ document.getElementById('fullPlayBtn').textContent='▶'; if(rafFull) cancelAnimationFrame(rafFull); };
-
+  audio.ontimeupdate=onFullTimeUpdate;
+  audio.onended=function(){ document.getElementById('fullPlayBtn').textContent='▶'; };
   document.getElementById('fullResult').style.display='block';
   document.getElementById('btnResetFull').style.display='inline-block';
 }
 
-// ── Cores por raiz de acorde (fixas para consistência visual) ─────────────────
-var CHORD_COLORS={
-  'C':'#3ecfaa','C#':'#30b896','D':'#5b9cf6','D#':'#4a8be0',
-  'E':'#a78bfa','F':'#e09940','F#':'#d4892e','G':'#e8614a',
-  'G#':'#d44f38','A':'#f472b6','A#':'#e05ea8','B':'#8b5cf6',
-};
-function chordColor(root){ return CHORD_COLORS[root]||'#7d8590'; }
-
-function buildChordTimeline(segments, duration){
+function buildChordTimeline(segs,dur){
   var tl=document.getElementById('chordTimeline'); tl.innerHTML='';
-  var total=duration||segments[segments.length-1]?.end||1;
-  segments.forEach(function(seg,i){
-    var pct=((seg.end-seg.start)/total*100).toFixed(3);
-    var left=((seg.start/total)*100).toFixed(3);
+  segs.forEach(function(seg,i){
+    var pct=((seg.end-seg.start)/dur*100).toFixed(3);
+    var left=((seg.start/dur)*100).toFixed(3);
     var el=document.createElement('div');
     el.className='chord-seg'+(seg.noChord?' timeline-no-chord':'');
-    el.id='cseg_'+i;
-    el.style.left=left+'%';
-    el.style.width=pct+'%';
-    if(!seg.noChord && seg.root){
-      var col=chordColor(seg.root);
+    el.id='cseg_'+i; el.style.left=left+'%'; el.style.width=pct+'%';
+    if(!seg.noChord&&seg.root){
+      var col=CHORD_COLORS[seg.root]||'#7d8590';
       el.style.background='rgba('+hexToRgb(col)+',.25)';
       el.style.color=col;
     }
     el.textContent=seg.noChord?'':seg.chord||'';
-    el.title=(seg.complex||seg.chord||'')+(seg.bass?' / '+seg.bass:'')
-            +' ('+fmtTime(seg.start)+' – '+fmtTime(seg.end)+')';
+    el.title=(seg.complex||seg.chord||'')+(seg.bass?' / '+seg.bass:'')+' ('+fmtTime(seg.start)+'–'+fmtTime(seg.end)+')';
     el.onclick=function(){ seekTo(seg.start); };
     tl.appendChild(el);
   });
 }
 
-function hexToRgb(hex){
-  var r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
-  return r+','+g+','+b;
-}
-
-var lastSegIdx=-1;
 function onFullTimeUpdate(){
   var audio=document.getElementById('fullAudio');
-  var t=audio.currentTime, dur=audio.duration||fullDuration||1;
-  // seek bar
+  var t=audio.currentTime,dur=audio.duration||fullDuration||1;
   document.getElementById('fullSeek').value=t;
   document.getElementById('fullTimeDisplay').textContent=fmtTime(t)+' / '+fmtTime(dur);
-  // cursor na timeline
-  var pct=(t/dur*100).toFixed(3);
-  document.getElementById('timelineCursor').style.left=pct+'%';
-  // segmento ativo
-  var idx=fullSegments.findIndex(function(s){ return t>=s.start && t<s.end; });
+  document.getElementById('timelineCursor').style.left=(t/dur*100).toFixed(3)+'%';
+  var idx=fullSegments.findIndex(function(s){ return t>=s.start&&t<s.end; });
   if(idx===-1) idx=fullSegments.length-1;
   if(idx!==lastSegIdx){
     lastSegIdx=idx;
-    // remove active de todos
     document.querySelectorAll('.chord-seg.active-seg').forEach(function(el){ el.classList.remove('active-seg'); });
-    var segEl=document.getElementById('cseg_'+idx);
-    if(segEl) segEl.classList.add('active-seg');
-    updateInsightPanel(fullSegments[idx]);
+    var segEl=document.getElementById('cseg_'+idx); if(segEl) segEl.classList.add('active-seg');
+    updateChordPanel(fullSegments[idx]);
   }
 }
 
-function updateInsightPanel(seg){
+function updateChordPanel(seg){
   if(!seg) return;
-  // acorde atual
   document.getElementById('chordNowName').textContent    = seg.chord||'—';
   document.getElementById('chordNowComplex').textContent = seg.complex&&seg.complex!==seg.chord ? seg.complex : '';
   document.getElementById('chordNowBass').textContent    = seg.bass ? '/ '+seg.bass+' no baixo' : '';
-
-  // notas MIDI
   var mPanel=document.getElementById('midiLivePanel');
-  if(seg.noChord||!seg.midi){ mPanel.innerHTML='<span style="font-size:12px;color:var(--muted)">Sem acorde detectado neste trecho</span>'; }
+  if(seg.noChord||!seg.midi){ mPanel.innerHTML='<span style="font-size:12px;color:var(--muted)">Sem acorde detectado</span>'; }
   else{
     var h='';
     [{key:'root',label:'Fundamental',cls:'root'},{key:'harmony',label:'Harmonia',cls:'harmony'},{key:'color',label:'Cor',cls:'color'}].forEach(function(g){
@@ -541,43 +532,43 @@ function updateInsightPanel(seg){
     });
     mPanel.innerHTML=h;
   }
-
-  // dicas
   var tPanel=document.getElementById('tipsPanel');
-  if(!seg.tips||!seg.tips.length){ tPanel.innerHTML='<span style="font-size:12px;color:var(--muted)">Sem dicas disponíveis para este trecho</span>'; }
-  else{
-    tPanel.innerHTML=seg.tips.map(function(t){ return '<div class="tip-item">'+t+'</div>'; }).join('');
-  }
+  if(!seg.tips||!seg.tips.length){ tPanel.innerHTML='<span style="font-size:12px;color:var(--muted)">Sem dicas disponíveis</span>'; }
+  else{ tPanel.innerHTML=seg.tips.map(function(t){ return '<div class="tip-item">'+t+'</div>'; }).join(''); }
 }
 
-function toggleSyncPlay(){
-  var audio=document.getElementById('fullAudio');
-  var btn=document.getElementById('fullPlayBtn');
-  if(audio.paused){ audio.play(); btn.textContent='⏸'; }
-  else             { audio.pause(); btn.textContent='▶'; }
-}
-function seekTo(val){
-  var audio=document.getElementById('fullAudio');
-  audio.currentTime=parseFloat(val);
-  onFullTimeUpdate();
-}
-
+function toggleSyncPlay(){ var a=document.getElementById('fullAudio'),b=document.getElementById('fullPlayBtn'); if(a.paused){a.play();b.textContent='⏸';}else{a.pause();b.textContent='▶';} }
+function seekTo(val){ var a=document.getElementById('fullAudio'); a.currentTime=parseFloat(val); onFullTimeUpdate(); }
 function resetFull(){
-  var audio=document.getElementById('fullAudio'); audio.pause(); audio.src='';
+  var a=document.getElementById('fullAudio'); a.pause(); a.src='';
   selectedFiles.full=null; fullSegments=[]; lastSegIdx=-1;
-  document.getElementById('fileFullName').textContent='';
-  document.getElementById('fileFull').value='';
-  document.getElementById('btnProcessFull').disabled=true;
-  document.getElementById('btnResetFull').style.display='none';
-  document.getElementById('fullResult').style.display='none';
-  document.getElementById('fullPlayBtn').textContent='▶';
+  document.getElementById('fileFullName').textContent=''; document.getElementById('fileFull').value='';
+  document.getElementById('btnProcessFull').disabled=true; document.getElementById('btnResetFull').style.display='none';
+  document.getElementById('fullResult').style.display='none'; document.getElementById('fullPlayBtn').textContent='▶';
   hideError('errorFull');
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// INSIGHT — VOZ SOLO (gráfico sincronizado)
+// INSIGHT — VOZ SOLO (sincronizado)
 // ═══════════════════════════════════════════════════════════════════════════════
-var noteChartInstance=null, vocalNoteEvents=[];
+var noteChartInstance=null, vocalNoteEvents=[], vocalSampleEvents=[];
+
+// Plugin Chart.js para desenhar cursor vertical
+var vCursorPlugin={
+  id:'vCursor',
+  afterDraw:function(chart){
+    if(chart.vLineX==null) return;
+    var ctx=chart.ctx, yAxis=chart.scales.y;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(chart.vLineX, yAxis.top);
+    ctx.lineTo(chart.vLineX, yAxis.bottom);
+    ctx.lineWidth=1.5;
+    ctx.strokeStyle='rgba(255,255,255,0.75)';
+    ctx.stroke();
+    ctx.restore();
+  }
+};
 
 async function processVocal(){
   var file=selectedFiles.vocal; if(!file) return;
@@ -590,11 +581,11 @@ async function processVocal(){
     if(!r.ok){ var e=await r.json(); throw new Error(e.error||'Erro no servidor'); }
     var data=await r.json();
     hideProgress('Vocal');
-    renderVocalResult(data, file);
+    renderVocalResult(data,file);
   }catch(e){ hideProgress('Vocal'); showError('errorVocal',e.message); document.getElementById('btnProcessVocal').disabled=false; }
 }
 
-function renderVocalResult(data, file){
+function renderVocalResult(data,file){
   vocalNoteEvents=data.noteEvents||[];
 
   // player com arquivo local
@@ -604,12 +595,10 @@ function renderVocalResult(data, file){
     document.getElementById('vocalSeek').max=audio.duration;
     document.getElementById('vocalTimeDisplay').textContent=fmtTime(0)+' / '+fmtTime(audio.duration);
   };
-  audio.ontimeupdate=function(){ onVocalTimeUpdate(); };
+  audio.ontimeupdate=onVocalTimeUpdate;
+  audio.onended=function(){ document.getElementById('vocalPlayBtn').textContent='▶'; };
 
-  // gráfico
   buildNoteChart(vocalNoteEvents);
-
-  // análise textual
   renderVocalAnalysis(data);
 
   document.getElementById('vocalResult').style.display='block';
@@ -619,28 +608,32 @@ function renderVocalResult(data, file){
 function buildNoteChart(events){
   if(noteChartInstance){ noteChartInstance.destroy(); noteChartInstance=null; }
   if(!events.length) return;
+
+  // Amostra para performance (máx 400 pontos visíveis)
   var step=Math.max(1,Math.floor(events.length/400));
-  var sample=events.filter(function(_,i){ return i%step===0; });
+  vocalSampleEvents=events.filter(function(_,i){ return i%step===0; });
+
   noteChartInstance=new Chart(document.getElementById('noteChart'),{
     type:'line',
+    plugins:[vCursorPlugin],
     data:{
-      labels:sample.map(function(e){ return e.time; }),
+      labels:vocalSampleEvents.map(function(e){ return e.time; }),
       datasets:[{
-        label:'Hz', data:sample.map(function(e){ return e.hz; }),
-        borderColor:'#5b9cf6', borderWidth:1.5, pointRadius:0, tension:0.3, fill:false, spanGaps:false,
+        label:'Hz',data:vocalSampleEvents.map(function(e){ return e.hz; }),
+        borderColor:'#5b9cf6',borderWidth:1.5,pointRadius:0,tension:0.3,fill:false,spanGaps:false,
       }]
     },
     options:{
-      responsive:true, maintainAspectRatio:false, animation:false,
+      responsive:true,maintainAspectRatio:false,animation:false,
       plugins:{
         legend:{display:false},
         tooltip:{callbacks:{label:function(ctx){
-          var ev=sample[ctx.dataIndex];
+          var ev=vocalSampleEvents[ctx.dataIndex];
           return (ev?ev.note+' — ':'')+ctx.parsed.y.toFixed(1)+' Hz';
         }}}
       },
       scales:{
-        x:{ticks:{color:'#7d8590',maxTicksLimit:10,font:{size:11},callback:function(v,i){ return fmtTime(sample[i]?.time||0); }},grid:{color:'rgba(100,110,120,.12)'},border:{display:false}},
+        x:{display:false},
         y:{ticks:{color:'#7d8590',font:{size:11},callback:function(v){ return v+'Hz'; }},grid:{color:'rgba(100,110,120,.12)'},border:{display:false}}
       }
     }
@@ -650,43 +643,101 @@ function buildNoteChart(events){
 function onVocalTimeUpdate(){
   var audio=document.getElementById('vocalAudio');
   var t=audio.currentTime, dur=audio.duration||1;
+
+  // seek bar + tempo
   document.getElementById('vocalSeek').value=t;
   document.getElementById('vocalTimeDisplay').textContent=fmtTime(t)+' / '+fmtTime(dur);
 
-  // linha vertical no gráfico
-  if(noteChartInstance){
-    var ds=noteChartInstance.data.datasets;
-    // remove linha vertical anterior
-    if(ds.length>1) ds.splice(1,1);
-    ds.push({
-      label:'Cursor',
-      data:noteChartInstance.data.labels.map(function(lbl){ return parseFloat(lbl)<=t?null:null; }),
-      borderColor:'rgba(255,255,255,.5)',
-      borderWidth:1,
-      pointRadius:0,
-      fill:false,
-    });
-    // acha nota mais próxima do timestamp atual
-    var closest=vocalNoteEvents.reduce(function(best,e){ return Math.abs(e.time-t)<Math.abs(best.time-t)?e:best; }, vocalNoteEvents[0]);
-    if(closest) document.getElementById('noteAtCursor').textContent=closest.note+' — '+closest.hz+' Hz';
-
-    // move anotação vertical via plugin (linha simples)
-    noteChartInstance.options.plugins.annotation=undefined;
-    noteChartInstance.update('none');
+  // cursor no gráfico
+  if(noteChartInstance&&vocalSampleEvents.length){
+    var idx=0, minDist=Infinity;
+    for(var i=0;i<vocalSampleEvents.length;i++){
+      var d=Math.abs(vocalSampleEvents[i].time-t);
+      if(d<minDist){ minDist=d; idx=i; }
+    }
+    var meta=noteChartInstance.getDatasetMeta(0);
+    if(meta&&meta.data[idx]){
+      noteChartInstance.vLineX=meta.data[idx].x;
+      noteChartInstance.update('none');
+    }
   }
+
+  // nota mais próxima do timestamp atual (no array completo)
+  if(!vocalNoteEvents.length) return;
+  var closest=vocalNoteEvents.reduce(function(best,e){
+    return Math.abs(e.time-t)<Math.abs(best.time-t)?e:best;
+  },vocalNoteEvents[0]);
+
+  updateVocalLivePanel(closest);
 }
 
-function toggleVocalPlay(){
-  var audio=document.getElementById('vocalAudio');
-  var btn=document.getElementById('vocalPlayBtn');
-  if(audio.paused){ audio.play(); btn.textContent='⏸'; }
-  else             { audio.pause(); btn.textContent='▶'; }
-}
-function seekVocalTo(val){
-  var audio=document.getElementById('vocalAudio');
-  audio.currentTime=parseFloat(val);
+// ── Painel live de voz — atualiza nota + harmonias + dica ─────────────────────
+var lastVocalNote='';
+function updateVocalLivePanel(ev){
+  if(!ev||!ev.note) return;
+  if(ev.note===lastVocalNote) return; // evita re-render desnecessário
+  lastVocalNote=ev.note;
+
+  // nota atual
+  document.getElementById('noteNowName').textContent = ev.note;
+  document.getElementById('noteNowHz').textContent   = ev.hz+' Hz';
+  document.getElementById('noteAtCursor').textContent= ev.note+' — '+ev.hz+' Hz';
+
+  // harmonias baseadas na nota atual
+  var midi=ev.midi||midiFromName(ev.note);
+  if(!midi) return;
+
+  var harmonies=buildNoteHarmonies(midi);
+  var h='';
+  [{key:'unison',label:'Uníssono / oitava',cls:'root'},{key:'thirds',label:'Terças',cls:'harmony'},{key:'fifth',label:'Quinta + quarta',cls:'color'}].forEach(function(g){
+    var notes=harmonies[g.key]||[]; if(!notes.length) return;
+    h+='<div class="midi-group-label">'+g.label+'</div><div class="midi-row">';
+    notes.forEach(function(n){ h+='<span class="midi-note '+g.cls+(n===ev.note?' active-note':'')+'">'+n+'</span>'; });
+    h+='</div>';
+  });
+  document.getElementById('noteHarmoniesPanel').innerHTML=h||'<span style="font-size:12px;color:var(--muted)">Sem harmonia disponível</span>';
+
+  // dica contextual
+  var tip=buildNoteTip(ev.note, midi, harmonies);
+  document.getElementById('noteTipPanel').innerHTML='<div class="tip-item">'+tip+'</div>';
 }
 
+function midiFromName(noteName){
+  var m=noteName.match(/^([A-G][#b]?)(-?\d+)$/);
+  if(!m) return 60;
+  return (parseInt(m[2])+1)*12+(NOTE_IDX[m[1]]||0);
+}
+
+function buildNoteHarmonies(midi){
+  // Para cada nota cantada, sugere harmonias comuns de backing vocal
+  var name=midiToName(midi)||'?';
+  var oct=parseInt(name.slice(-1));
+
+  // Uníssono e oitavas
+  var unison=[midiToName(midi-12),name,midiToName(midi+12)].filter(function(n){ return n&&n!==null; });
+
+  // Terças: menor (3st) e maior (4st) acima
+  var m3=midiToName(midi+3), M3=midiToName(midi+4);
+  var thirds=[m3,M3].filter(Boolean);
+
+  // Quinta (7st) e quarta (5st) acima
+  var p5=midiToName(midi+7), p4=midiToName(midi+5);
+  var fifth=[p5,p4].filter(Boolean);
+
+  return { unison, thirds, fifth };
+}
+
+function buildNoteTip(noteName, midi, harmonies){
+  var m3=harmonies.thirds[0]||'?', M3=harmonies.thirds[1]||'?';
+  var p5=harmonies.fifth[0]||'?';
+  var oct=midiToName(midi+12)||'?', octDown=midiToName(midi-12)||'?';
+  return 'Você está em <strong>'+noteName+'</strong>. '
+    +'Tente <strong>'+m3+'</strong> (terça menor) ou <strong>'+M3+'</strong> (terça maior) como harmonia. '
+    +'A quinta perfeita é <strong>'+p5+'</strong>. '
+    +'Para dobramento de oitava: <strong>'+oct+'</strong> acima ou <strong>'+octDown+'</strong> abaixo.';
+}
+
+// ── Análise geral (estática) ──────────────────────────────────────────────────
 function renderVocalAnalysis(data){
   var el=document.getElementById('vocalInsightContent');
   var html='';
@@ -703,29 +754,21 @@ function renderVocalAnalysis(data){
     data.tecnicas.forEach(function(t){ html+='<div class="technique"><div class="technique-name">'+t.nome+'</div><div class="technique-desc">'+t.descricao+'</div></div>'; });
     html+='</div>';
   }
-  if(data.midi){
-    html+='<div style="margin-top:14px"><div class="sec-label" style="margin-bottom:8px">Notas MIDI sugeridas</div>';
-    [{key:'root',label:'Fundamental',cls:'root'},{key:'harmony',label:'Harmonia',cls:'harmony'},{key:'color',label:'Cor',cls:'color'}].forEach(function(g){
-      var notes=data.midi[g.key]||[]; if(!notes.length) return;
-      html+='<div style="margin-bottom:8px"><div style="font-size:11px;color:var(--muted);margin-bottom:4px">'+g.label+'</div><div class="midi-row">';
-      notes.forEach(function(n){ html+='<span class="midi-note '+g.cls+'">'+n+'</span>'; });
-      html+='</div></div>';
-    });
-    html+='</div>';
-  }
   el.innerHTML=html||'<div class="empty-state"><span class="icon">⚠️</span>Sem dados retornados.</div>';
 }
 
+function toggleVocalPlay(){ var a=document.getElementById('vocalAudio'),b=document.getElementById('vocalPlayBtn'); if(a.paused){a.play();b.textContent='⏸';}else{a.pause();b.textContent='▶';} }
+function seekVocalTo(val){ document.getElementById('vocalAudio').currentTime=parseFloat(val); }
 function resetVocal(){
-  var audio=document.getElementById('vocalAudio'); audio.pause(); audio.src='';
-  selectedFiles.vocal=null; vocalNoteEvents=[];
-  document.getElementById('fileVocalName').textContent='';
-  document.getElementById('fileVocal').value='';
-  document.getElementById('btnProcessVocal').disabled=true;
-  document.getElementById('btnResetVocal').style.display='none';
-  document.getElementById('vocalResult').style.display='none';
-  document.getElementById('vocalPlayBtn').textContent='▶';
+  var a=document.getElementById('vocalAudio'); a.pause(); a.src='';
+  selectedFiles.vocal=null; vocalNoteEvents=[]; vocalSampleEvents=[]; lastVocalNote='';
+  document.getElementById('fileVocalName').textContent=''; document.getElementById('fileVocal').value='';
+  document.getElementById('btnProcessVocal').disabled=true; document.getElementById('btnResetVocal').style.display='none';
+  document.getElementById('vocalResult').style.display='none'; document.getElementById('vocalPlayBtn').textContent='▶';
   document.getElementById('noteAtCursor').textContent='';
+  document.getElementById('noteNowName').textContent='—'; document.getElementById('noteNowHz').textContent='';
+  document.getElementById('noteHarmoniesPanel').innerHTML='<span style="font-size:12px;color:var(--muted)">Dê play para ver as harmonias</span>';
+  document.getElementById('noteTipPanel').innerHTML='<span style="font-size:12px;color:var(--muted)">As dicas aparecem conforme a voz toca</span>';
   if(noteChartInstance){ noteChartInstance.destroy(); noteChartInstance=null; }
   hideError('errorVocal');
 }
@@ -733,11 +776,10 @@ function resetVocal(){
 // ── player stems ──────────────────────────────────────────────────────────────
 var currentPlaying=null;
 function togglePlay(audioId,btnId){
-  var audio=document.getElementById(audioId),btn=document.getElementById(btnId);
-  if(!audio) return;
+  var audio=document.getElementById(audioId),btn=document.getElementById(btnId); if(!audio) return;
   if(currentPlaying&&currentPlaying!==audio){ currentPlaying.pause(); document.querySelectorAll('.btn-play.playing').forEach(function(b){ b.textContent='▶'; b.classList.remove('playing'); }); }
   if(audio.paused){ audio.play(); btn.textContent='⏸'; btn.classList.add('playing'); currentPlaying=audio; audio.onended=function(){ btn.textContent='▶'; btn.classList.remove('playing'); }; }
-  else            { audio.pause(); btn.textContent='▶'; btn.classList.remove('playing'); }
+  else{ audio.pause(); btn.textContent='▶'; btn.classList.remove('playing'); }
 }
 function setVolume(audioId,val){ var a=document.getElementById(audioId); if(a) a.volume=parseFloat(val); }
 </script>
