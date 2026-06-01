@@ -1,6 +1,6 @@
 // api/insight.js
-// Retorna o array completo de segmentos de acordes com timestamps
-// para o frontend montar a timeline interativa sincronizada com o player
+// Retorna segmentos de acordes com timestamps para a timeline sincronizada
+// CORRIGIDO: bug de cálculo de oitava em noteAt + notas MIDI em range vocal real
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -39,7 +39,7 @@ export default async function handler(req, res) {
     }
     if (!rawResult) return res.status(500).json({ error: 'Timeout após 5 minutos.' });
 
-    // ── 4. Normaliza o array de segmentos ─────────────────────────────────────
+    // ── 4. Normaliza array de segmentos ───────────────────────────────────────
     let segments = [];
     if (Array.isArray(rawResult)) {
       segments = rawResult;
@@ -51,7 +51,7 @@ export default async function handler(req, res) {
       }
     }
 
-    // ── 5. Extrai tonalidade global (acorde mais frequente = tônica) ──────────
+    // ── 5. Tonalidade global ──────────────────────────────────────────────────
     const FIELDS = ['chord_simple_pop', 'chord_basic_pop', 'chord_majmin', 'chord_basic_jazz'];
     const freq = {};
     for (const seg of segments) {
@@ -61,34 +61,34 @@ export default async function handler(req, res) {
     }
     const sorted        = Object.entries(freq).sort((a, b) => b[1] - a[1]);
     const dominantChord = sorted[0]?.[0] || null;
-    let globalKey = 'D#', globalScale = 'major';
+    let globalKey = 'C', globalScale = 'major';
     if (dominantChord) {
       const m = dominantChord.match(/^([A-G][#b]?)(m(?!aj)|-)?/);
       if (m) { globalKey = m[1]; globalScale = m[2] ? 'minor' : 'major'; }
     }
 
-    // ── 6. Processa cada segmento para o frontend ─────────────────────────────
+    // ── 6. Processa cada segmento ─────────────────────────────────────────────
     const processed = segments
-      .filter(seg => seg.end - seg.start > 0.1) // remove segmentos muito curtos
+      .filter(seg => seg.end - seg.start > 0.1)
       .map(seg => {
-        const chordName = FIELDS.reduce((acc, f) => acc || (seg[f] !== 'N' ? seg[f] : null), null) || null;
-        const complex   = seg.chord_complex_pop !== 'N' ? seg.chord_complex_pop : chordName;
+        const chordName = FIELDS.reduce((acc, f) => acc || (seg[f] && seg[f] !== 'N' ? seg[f] : null), null) || null;
+        const complex   = (seg.chord_complex_pop && seg.chord_complex_pop !== 'N') ? seg.chord_complex_pop : chordName;
         let root = null, isMinor = false;
         if (chordName) {
           const m = chordName.match(/^([A-G][#b]?)(m(?!aj)|-)?/);
           if (m) { root = m[1]; isMinor = !!m[2]; }
         }
         return {
-          start:    seg.start,
-          end:      seg.end,
-          chord:    chordName,        // ex: "G#m"
-          complex:  complex,          // ex: "G#m7" — para exibir versão mais completa
-          bass:     seg.bass || null,
+          start:   seg.start,
+          end:     seg.end,
+          chord:   chordName,
+          complex: complex,
+          bass:    seg.bass || null,
           root,
           isMinor,
-          noChord:  !chordName,
-          midi:     root ? buildChordMidi(root, isMinor) : null,
-          tips:     root ? buildChordTips(chordName, root, isMinor, globalKey) : null,
+          noChord: !chordName,
+          midi:    root ? buildChordMidi(root, isMinor) : null,
+          tips:    root ? buildChordTips(chordName, root, isMinor) : null,
         };
       });
 
@@ -97,7 +97,6 @@ export default async function handler(req, res) {
       globalScale,
       workflowUsed: chordsWf.name,
       segments: processed,
-      audioUrl: inputUrl, // repassa para o player
     });
 
   } catch (err) {
@@ -105,39 +104,120 @@ export default async function handler(req, res) {
   }
 }
 
-// ── Notas MIDI para um acorde específico ──────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// UTILITÁRIOS DE NOTAS — CORRIGIDOS
+// ═══════════════════════════════════════════════════════════════════════════════
 const CHROMATIC = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NOTE_IDX  = Object.fromEntries(CHROMATIC.map((n, i) => [n, i]));
+
+/**
+ * Retorna o nome da nota corretamente calculando a mudança de oitava.
+ * Ex: noteAt('G', 7, 4) → 'D5'  (quinta acima de G4, não D4)
+ *     noteAt('B', 1, 3) → 'C4'  (semitom acima de B3)
+ */
 function noteAt(root, semitones, octave) {
-  return CHROMATIC[((NOTE_IDX[root] ?? 0) + semitones + 12) % 12] + octave;
+  const baseIdx     = NOTE_IDX[root] ?? 0;
+  const total       = baseIdx + semitones;
+  const noteIdx     = ((total % 12) + 12) % 12;
+  const octaveShift = Math.floor(total / 12);
+  return CHROMATIC[noteIdx] + (octave + octaveShift);
 }
 
+/**
+ * Retorna o número MIDI de uma nota (C4 = 60).
+ */
+function midiOf(root, semitones, octave) {
+  const baseIdx     = NOTE_IDX[root] ?? 0;
+  const total       = baseIdx + semitones;
+  const octaveShift = Math.floor(total / 12);
+  return (octave + octaveShift + 1) * 12 + ((total % 12) + 12) % 12;
+}
+
+// Range ideal para backing vocals: C3 (48) a C6 (84)
+// Centro em E4 (64) — sweet spot para a maioria das vozes
+const BV_MIN    = 48;   // C3
+const BV_MAX    = 84;   // C6
+const BV_CENTER = 64;   // E4
+
+/**
+ * Retorna até `count` ocorrências de um tom de acorde dentro do range
+ * de backing vocal, priorizando as mais próximas do centro (E4).
+ */
+function bestNotes(root, semitones, count = 2) {
+  const candidates = [];
+  for (let oct = 2; oct <= 6; oct++) {
+    const midi = midiOf(root, semitones, oct);
+    const name = noteAt(root, semitones, oct);
+    if (midi >= BV_MIN && midi <= BV_MAX) {
+      candidates.push({ name, midi, dist: Math.abs(midi - BV_CENTER) });
+    }
+  }
+  // Ordena por proximidade ao centro e retorna os melhores
+  candidates.sort((a, b) => a.dist - b.dist);
+  return candidates
+    .slice(0, count)
+    .sort((a, b) => a.midi - b.midi) // reordena ascendente para exibição
+    .map(n => n.name);
+}
+
+/**
+ * Constrói as notas MIDI sugeridas para um acorde, cobrindo o
+ * range de backing vocal real (C3-C6) em vez de fixar oitava 4.
+ */
 function buildChordMidi(root, isMinor) {
-  const third = isMinor ? 3 : 4;
-  const sixth = isMinor ? 8 : 9;
+  const third   = isMinor ? 3 : 4;
+  const fifth   = 7;
+  const sixth   = isMinor ? 8 : 9;
+  const seventh = isMinor ? 10 : 11;
+
   return {
-    root:    [noteAt(root, 0, 4), noteAt(root, 0, 5)],
-    harmony: [noteAt(root, third, 4), noteAt(root, 7, 4), noteAt(root, third, 5), noteAt(root, 7, 5)],
-    color:   [noteAt(root, sixth, 4), noteAt(root, 2, 5), noteAt(root, isMinor ? 10 : 11, 4)],
+    // tônica em 2 oitavas próximas ao centro vocal
+    root: bestNotes(root, 0, 2),
+    // terça + quinta (pilares da harmonia)
+    harmony: [
+      ...bestNotes(root, third, 2),
+      ...bestNotes(root, fifth, 1),
+    ],
+    // cor harmônica: sexta/sétima + nona
+    color: [
+      ...bestNotes(root, sixth, 1),
+      ...bestNotes(root, seventh, 1),
+      ...bestNotes(root, 2, 1),  // nona (= 2 semitons, oitava acima)
+    ].filter(Boolean),
   };
 }
 
-// ── Dica contextual por acorde ────────────────────────────────────────────────
-function buildChordTips(chord, root, isMinor, globalKey) {
-  const mode = isMinor ? 'menor' : 'maior';
+/**
+ * Dicas contextuais para o acorde, com referências de notas
+ * calculadas no range vocal correto.
+ */
+function buildChordTips(chord, root, isMinor) {
+  const mode     = isMinor ? 'menor' : 'maior';
+  const third    = isMinor ? 3 : 4;
+  const rootRef  = bestNotes(root, 0,     1)[0] || noteAt(root, 0,     4);
+  const thirdRef = bestNotes(root, third, 1)[0] || noteAt(root, third, 4);
+  const fifthRef = bestNotes(root, 7,     1)[0] || noteAt(root, 7,     4);
+
   const tips = [
-    `Neste acorde de ${chord}, a nota de backing mais segura é ${noteAt(root, 0, 4)} (tônica) ou ${noteAt(root, isMinor ? 3 : 4, 4)} (terça ${mode}).`,
-    `Quinta do acorde: ${noteAt(root, 7, 4)} — funciona bem como pad sustentado.`,
+    `Neste acorde de ${chord}, a nota mais segura para backing é ${rootRef} (tônica) ou ${thirdRef} (terça ${mode}).`,
+    `Quinta do acorde: ${fifthRef} — ideal como pad sustentado sobre este trecho.`,
   ];
-  // tensões específicas por tipo
+
   if (chord?.includes('maj7') || chord?.includes('Δ')) {
-    tips.push(`Acorde com sétima maior — a nota ${noteAt(root, 11, 4)} adiciona brilho suave e sofisticação ao backing.`);
+    const maj7ref = bestNotes(root, 11, 1)[0] || noteAt(root, 11, 4);
+    tips.push(`Acorde com sétima maior — ${maj7ref} adiciona brilho sofisticado ao backing sem criar tensão.`);
   } else if (chord?.includes('7') && !chord?.includes('maj')) {
-    tips.push(`Acorde dominante com sétima — evite a nota ${noteAt(root, 11, 4)} no backing para não criar tensão excessiva. Prefira ${noteAt(root, 10, 4)}.`);
+    const b7ref  = bestNotes(root, 10, 1)[0] || noteAt(root, 10, 4);
+    const maj7ref = bestNotes(root, 11, 1)[0] || noteAt(root, 11, 4);
+    tips.push(`Acorde dominante — evite ${maj7ref} no backing (cria tensão excessiva). Use ${b7ref} (sétima menor) para suavizar.`);
   } else if (chord?.includes('dim') || chord?.includes('o')) {
-    tips.push(`Acorde diminuto — notas de passagem. Use o backing com movimentação, não sustentado. Experimente ${noteAt(root, 3, 4)} → ${noteAt(root, 4, 4)}.`);
+    const t1 = bestNotes(root, 3, 1)[0] || noteAt(root, 3, 4);
+    const t2 = bestNotes(root, 4, 1)[0] || noteAt(root, 4, 4);
+    tips.push(`Acorde diminuto — use o backing em movimento, não sustentado. Experimente a passagem ${t1} → ${t2}.`);
   } else if (chord?.includes('m') && !chord?.includes('maj')) {
-    tips.push(`Acorde menor — o backing em modo ${mode} de ${root} cria profundidade. Evite a terça maior (${noteAt(root, 4, 4)}) que conflita com o modo.`);
+    const maj3ref = bestNotes(root, 4, 1)[0] || noteAt(root, 4, 4);
+    tips.push(`Acorde menor — evite a terça maior ${maj3ref} no backing, pois conflita com o modo ${mode}.`);
   }
+
   return tips;
 }
