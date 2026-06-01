@@ -1,6 +1,6 @@
 // api/vocal-insight.js
-// Versão com debug completo do rawResult para diagnosticar o formato
-// do Note Mapping e corrigir o parser
+// Lê explicitamente a chave "pitch map" (com espaço) retornada pelo Note Mapping
+// e inclui preview do CSV para diagnosticar o formato
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -39,10 +39,7 @@ export default async function handler(req, res) {
           for (let i = 0; i < 30; i++) {
             await new Promise(r => setTimeout(r, 5000));
             const sd = await (await fetch(`https://api.music.ai/v1/job/${cj.id}`, { headers: { Authorization: API_KEY } })).json();
-            if (sd.status === 'SUCCEEDED') {
-              vocalUrl = sd.result?.vocals || sd.result?.voice || sd.result?.output || inputUrl;
-              break;
-            }
+            if (sd.status === 'SUCCEEDED') { vocalUrl = sd.result?.vocals || sd.result?.voice || sd.result?.output || inputUrl; break; }
             if (sd.status === 'FAILED') break;
           }
         }
@@ -65,93 +62,65 @@ export default async function handler(req, res) {
       if (sd.status === 'SUCCEEDED') { rawResult = sd.result; break; }
       if (sd.status === 'FAILED')    return res.status(500).json({ error: 'Job falhou: ' + JSON.stringify(sd.error) });
     }
-
     if (!rawResult) return res.status(500).json({ error: 'Timeout após 5 minutos.' });
 
-    // ── 5. DEBUG: devolve o rawResult completo para inspeção ─────────────────
-    // Isso nos permite ver exatamente o que o Note Mapping retorna
-    // e quais chaves/URLs estão disponíveis
-    const debugInfo = {
-      rawResultType:  typeof rawResult,
-      isArray:        Array.isArray(rawResult),
-      keys:           typeof rawResult === 'object' && !Array.isArray(rawResult) ? Object.keys(rawResult) : null,
-      arrayLength:    Array.isArray(rawResult) ? rawResult.length : null,
-      firstItem:      Array.isArray(rawResult) ? rawResult[0] : null,
-      rawResultSample: typeof rawResult === 'object' ? JSON.stringify(rawResult).slice(0, 800) : String(rawResult).slice(0, 800),
-    };
+    // ── 5. Lê a chave "pitch map" (com espaço) ────────────────────────────────
+    // O Note Mapping retorna: { "pitch map": "<url>", "pitch tracker with timestamps": "<url>" }
+    const pitchMapUrl       = rawResult['pitch map'] || null;
+    const pitchTrackerUrl   = rawResult['pitch tracker with timestamps'] || null;
+    const csvUrl            = pitchMapUrl || pitchTrackerUrl || null;
 
-    // ── 6. Tenta parsear com todas as estratégias possíveis ───────────────────
-    let noteEvents = [];
-    let parseStrategy = 'none';
-
-    // Estratégia A: é um array direto
-    if (Array.isArray(rawResult) && rawResult.length > 0) {
-      noteEvents    = rawResult;
-      parseStrategy = 'direct_array';
+    if (!csvUrl) {
+      return res.status(500).json({
+        error: 'Nenhuma URL de pitch map encontrada no resultado.',
+        rawResultKeys: Object.keys(rawResult),
+        rawResult,
+      });
     }
 
-    // Estratégia B: tem chave com URL de CSV ou JSON
-    if (!noteEvents.length && typeof rawResult === 'object') {
-      const urlKeys = Object.entries(rawResult).filter(([, v]) => typeof v === 'string' && v.startsWith('http'));
-      for (const [key, url] of urlKeys) {
-        try {
-          const resp = await fetch(url);
-          const text = await resp.text();
-          // tenta JSON primeiro
-          try {
-            const parsed = JSON.parse(text);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              noteEvents    = parsed;
-              parseStrategy = `json_from_key_${key}`;
-              break;
-            }
-          } catch (_) {
-            // tenta CSV
-            const parsed = parseNoteCSV(text);
-            if (parsed.length > 0) {
-              noteEvents    = parsed;
-              parseStrategy = `csv_from_key_${key}`;
-              break;
-            }
-          }
-        } catch (_) { /* continua */ }
-      }
+    // ── 6. Baixa o CSV ────────────────────────────────────────────────────────
+    let csvText = '';
+    try {
+      const csvResp = await fetch(csvUrl);
+      if (!csvResp.ok) throw new Error('HTTP ' + csvResp.status);
+      csvText = await csvResp.text();
+    } catch (e) {
+      return res.status(500).json({ error: 'Falha ao baixar CSV: ' + e.message, csvUrl });
     }
 
-    // Estratégia C: tem array em alguma chave
-    if (!noteEvents.length && typeof rawResult === 'object' && !Array.isArray(rawResult)) {
-      for (const [key, val] of Object.entries(rawResult)) {
-        if (Array.isArray(val) && val.length > 0) {
-          noteEvents    = val;
-          parseStrategy = `array_from_key_${key}`;
-          break;
-        }
-      }
-    }
+    // ── 7. Debug: primeiras linhas do CSV ─────────────────────────────────────
+    const csvLines   = csvText.trim().split('\n');
+    const csvPreview = csvLines.slice(0, 6).join('\n'); // header + 5 primeiras linhas
 
-    // ── 7. Monta a análise ────────────────────────────────────────────────────
+    // ── 8. Parseia o CSV com base no formato real ─────────────────────────────
+    const noteEvents = parseNoteCSV(csvText);
+
+    // ── 9. Análise ────────────────────────────────────────────────────────────
     const analysis = analyzeNotes(noteEvents);
 
     return res.status(200).json({
-      workflowUsed: noteWf.name,
-      cleanupUsed:  !!cleanupWf && vocalUrl !== inputUrl,
-      parseStrategy,
-      debugInfo,                // remove depois de confirmar o formato
-      noteEvents: noteEvents.slice(0, 2000), // limita para não pesar a resposta
+      workflowUsed:  noteWf.name,
+      cleanupUsed:   !!cleanupWf && vocalUrl !== inputUrl,
+      csvPreview,                           // remove depois de confirmar o formato
+      totalRows:     csvLines.length - 1,
+      parsedEvents:  noteEvents.length,
+      noteEvents:    noteEvents.slice(0, 2000),
       ...analysis,
     });
 
   } catch (err) {
-    return res.status(500).json({ error: err.message, stack: err.stack?.slice(0, 500) });
+    return res.status(500).json({ error: err.message });
   }
 }
 
-// ── Parser CSV ────────────────────────────────────────────────────────────────
+// ── Parser CSV flexível ───────────────────────────────────────────────────────
+// Suporta múltiplos formatos: CREPE, PESTO, crepe-f0, pitch tracker, etc.
 const CHROMATIC = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 
 function hzToNote(hz) {
   if (!hz || hz <= 0) return null;
   const midi = Math.round(12 * Math.log2(hz / 440) + 69);
+  if (midi < 0 || midi > 127) return null;
   return CHROMATIC[((midi % 12) + 12) % 12] + (Math.floor(midi / 12) - 1);
 }
 
@@ -162,37 +131,67 @@ function noteToMidi(n) {
 }
 
 function parseNoteCSV(text) {
-  const lines = text.trim().split('\n');
+  const lines = text.trim().split('\n').filter(l => l.trim());
   if (lines.length < 2) return [];
-  const header = lines[0].toLowerCase().split(',').map(s => s.trim());
-  const ti = header.findIndex(h => h.includes('time') || h === 't');
-  const fi = header.findIndex(h => h.includes('freq') || h.includes('hz') || h.includes('pitch'));
-  const ni = header.findIndex(h => h === 'note' || h.includes('note_name') || h.includes('note name'));
-  const ci = header.findIndex(h => h.includes('conf'));
+
+  const header = lines[0].toLowerCase().split(',').map(s => s.trim().replace(/['"]/g, ''));
+
+  // Mapeamento flexível de colunas — cobre CREPE, PESTO, Music AI e outros
+  const ti = header.findIndex(h =>
+    h === 'time' || h === 't' || h === 'time(s)' || h === 'timestamp' || h === 'times'
+  );
+  const fi = header.findIndex(h =>
+    h === 'frequency' || h === 'freq' || h === 'hz' || h === 'f0' ||
+    h === 'pitch' || h === 'frequency(hz)' || h === 'f0(hz)' || h.includes('freq')
+  );
+  const ni = header.findIndex(h =>
+    h === 'note' || h === 'note_name' || h === 'note name' || h === 'pitch_name' || h === 'midi_note'
+  );
+  const ci = header.findIndex(h =>
+    h === 'confidence' || h === 'conf' || h === 'voiced_prob' || h === 'probability' ||
+    h === 'activation' || h.includes('conf')
+  );
+  const mi = header.findIndex(h =>
+    h === 'midi' || h === 'midi_pitch' || h === 'midi pitch' || h === 'pitch_midi'
+  );
 
   const events = [];
   for (let i = 1; i < lines.length; i++) {
-    if (!lines[i].trim()) continue;
-    const cols = lines[i].split(',').map(s => s.trim());
-    const time = ti >= 0 ? parseFloat(cols[ti]) : i * 0.01;
-    const hz   = fi >= 0 ? parseFloat(cols[fi]) : 0;
-    const note = ni >= 0 ? cols[ni] : hzToNote(hz);
+    const raw  = lines[i].trim();
+    if (!raw)  continue;
+    const cols = raw.split(',').map(s => s.trim().replace(/['"]/g, ''));
+
+    const time = ti >= 0 ? parseFloat(cols[ti]) : (i - 1) * 0.01;
+    if (isNaN(time)) continue;
+
+    // Hz: tenta coluna de frequência, depois converte de MIDI se disponível
+    let hz = fi >= 0 ? parseFloat(cols[fi]) : 0;
+    if ((!hz || isNaN(hz)) && mi >= 0) {
+      const midiVal = parseFloat(cols[mi]);
+      if (!isNaN(midiVal) && midiVal > 0) hz = 440 * Math.pow(2, (midiVal - 69) / 12);
+    }
+    if (isNaN(hz)) hz = 0;
+
+    // nota: tenta coluna de nota, depois converte de Hz
+    let note = (ni >= 0 && cols[ni]) ? cols[ni] : hzToNote(hz);
+
+    // confiança: padrão 1 se não existir
     const conf = ci >= 0 ? parseFloat(cols[ci]) : 1;
-    if (hz > 0 && conf > 0.1) events.push({ time: +time.toFixed(3), hz: +hz.toFixed(2), note });
+    if (isNaN(conf)) continue;
+
+    // filtra: deve ter Hz válido e confiança mínima
+    if (hz > 40 && hz < 4200 && conf > 0.05) {
+      events.push({ time: +time.toFixed(3), hz: +hz.toFixed(2), note });
+    }
   }
   return events;
 }
 
-// ── Análise ───────────────────────────────────────────────────────────────────
+// ── Análise das notas ─────────────────────────────────────────────────────────
 function analyzeNotes(events) {
   const valid = (events || [])
-    .filter(e => e.note || e.hz > 0)
-    .map(e => ({
-      ...e,
-      note: e.note || hzToNote(e.hz),
-      midi: noteToMidi(e.note || hzToNote(e.hz) || 'C4'),
-    }))
-    .filter(e => e.midi >= 24 && e.midi <= 108); // C1 a C8 — mais amplo
+    .map(e => ({ ...e, midi: noteToMidi(e.note || hzToNote(e.hz) || 'C4') }))
+    .filter(e => e.midi >= 24 && e.midi <= 108);
 
   if (!valid.length) {
     return {
@@ -208,26 +207,28 @@ function analyzeNotes(events) {
   const toNote = m => CHROMATIC[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1);
   const loNote = toNote(lo), hiNote = toNote(hi), cNote = toNote(center);
   const semi   = hi - lo;
+
   const rootMatch = cNote.match(/^([A-G][#]?)/);
-  const root   = rootMatch ? rootMatch[1] : 'C';
-  const isMinor = center < 60;
-  const third  = isMinor ? 3 : 4, sixth = isMinor ? 8 : 9;
+  const root      = rootMatch ? rootMatch[1] : 'C';
+  const isMinor   = center < 60;
+  const third     = isMinor ? 3 : 4, sixth = isMinor ? 8 : 9;
+
   const NOTE_IDX = Object.fromEntries(CHROMATIC.map((n, i) => [n, i]));
-  const noteAt = (r, s, o) => CHROMATIC[((NOTE_IDX[r]??0)+s+12)%12]+o;
+  const noteAt   = (r, s, o) => CHROMATIC[((NOTE_IDX[r] ?? 0) + s + 12) % 12] + o;
 
   return {
     lowestNote: loNote, highestNote: hiNote, centerNote: cNote,
     semitones:  semi,   range: `${loNote} — ${hiNote}`,
     tecnicas: [
-      { nome: 'Harmonia em terça acima',    descricao: `Sua voz ficou centrada em torno de ${cNote}. Cante uma terça ${isMinor?'menor':'maior'} acima para o backing mais natural.` },
-      { nome: 'Harmonia em terça abaixo',   descricao: `Tente cantar uma terça abaixo de ${cNote}. Com extensão de ${loNote} a ${hiNote} há espaço para harmonias graves.` },
-      { nome: semi >= 12 ? 'Dobramento em oitava' : 'Stacked vocals', descricao: semi >= 12 ? `Extensão de ${semi} semitons — experimente dobrar partes graves uma oitava acima.` : `Grave 3 camadas próximas de ${cNote} com leve detuning (±10 cents) para coral encorpado.` },
-      { nome: 'Pad vocal sustentado',       descricao: `Segure a nota ${cNote} com vibrato suave. Grave em intensidade baixa para não sobrepor a voz principal.` },
+      { nome: 'Harmonia em terça acima',  descricao: `Sua voz ficou centrada em torno de ${cNote}. Cante uma terça ${isMinor?'menor':'maior'} acima para o backing mais natural.` },
+      { nome: 'Harmonia em terça abaixo', descricao: `Tente cantar uma terça abaixo de ${cNote}. Com extensão de ${loNote} a ${hiNote} há espaço para harmonias graves.` },
+      { nome: semi >= 12 ? 'Dobramento em oitava' : 'Stacked vocals', descricao: semi >= 12 ? `Extensão de ${semi} semitons — experimente dobrar partes graves uma oitava acima.` : `Grave 3 camadas próximas de ${cNote} com leve detuning (±10 cents) para um coral encorpado.` },
+      { nome: 'Pad vocal sustentado', descricao: `Segure a nota ${cNote} com vibrato suave. Grave com intensidade baixa para não sobrepor a voz principal.` },
     ],
     midi: {
-      root:    [noteAt(root,0,4),     noteAt(root,0,5)],
-      harmony: [noteAt(root,third,4), noteAt(root,7,4), noteAt(root,third,5), noteAt(root,7,5)],
-      color:   [noteAt(root,sixth,4), noteAt(root,2,5), noteAt(root,11,4)],
+      root:    [noteAt(root, 0, 4),     noteAt(root, 0, 5)],
+      harmony: [noteAt(root, third, 4), noteAt(root, 7, 4), noteAt(root, third, 5), noteAt(root, 7, 5)],
+      color:   [noteAt(root, sixth, 4), noteAt(root, 2, 5), noteAt(root, 11, 4)],
     },
   };
 }
